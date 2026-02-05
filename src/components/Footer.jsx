@@ -36,7 +36,7 @@ const Footer = () => {
           <div className="footer-contact">
             <h4>Contact Info</h4>
             <p><i className="fas fa-phone"></i> +1 (555) 123-4567</p>
-            <p><i className="fas fa-envelope"></i> hello@asibakers.com</p>
+            <p><i className="fas fa-envelope"></i> order@asibakers.shop</p>
             <p><i className="fas fa-map-marker-alt"></i> 123 Sweet Street</p>
           </div>
         </div>
