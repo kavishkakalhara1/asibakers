@@ -60,7 +60,7 @@ const CartModal = ({ onClose }) => {
                   <img src={item.image} alt={item.name} />
                   <div className="cart-item-details">
                     <h4>{item.name}</h4>
-                    <p className="cart-item-price">${item.price}</p>
+                    <p className="cart-item-price">Rs {item.price}</p>
                   </div>
                   <div className="cart-item-controls">
                     <button
@@ -93,7 +93,7 @@ const CartModal = ({ onClose }) => {
             <div className="cart-footer">
               <div className="cart-total">
                 <span>Total:</span>
-                <span className="total-amount">${cartTotal.toFixed(2)}</span>
+                <span className="total-amount">Rs {cartTotal.toFixed(2)}</span>
               </div>
               <div className="cart-actions">
                 <button className="btn btn-secondary" onClick={handleClearCart}>

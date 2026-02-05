@@ -46,7 +46,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
     '5:00 PM - 7:00 PM'
   ];
 
-  const deliveryFee = formData.deliveryType === 'delivery' ? 5.99 : 0;
+  const deliveryFee = formData.deliveryType === 'delivery' ? 500 : 0;
   const totalAmount = cartTotal + deliveryFee;
 
   useEffect(() => {
@@ -242,7 +242,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
           <div className="option-content">
             <i className="fas fa-truck"></i>
             <span className="option-title">Home Delivery</span>
-            <span className="option-price">+$5.99</span>
+            <span className="option-price">+Rs 500</span>
           </div>
         </label>
         <label className={`delivery-option ${formData.deliveryType === 'pickup' ? 'selected' : ''}`}>
@@ -494,7 +494,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
                   <span className="item-name">{item.name}</span>
                   <span className="item-qty">Qty: {item.quantity}</span>
                 </div>
-                <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                <span className="item-price">Rs {(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -546,15 +546,15 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
         <div className="order-total-summary">
           <div className="total-row">
             <span>Subtotal</span>
-            <span>${cartTotal.toFixed(2)}</span>
+            <span>Rs {cartTotal.toFixed(2)}</span>
           </div>
           <div className="total-row">
             <span>{formData.deliveryType === 'delivery' ? 'Delivery Fee' : 'Pickup'}</span>
-            <span>{deliveryFee > 0 ? `$${deliveryFee.toFixed(2)}` : 'Free'}</span>
+            <span>{deliveryFee > 0 ? `Rs ${deliveryFee.toFixed(2)}` : 'Free'}</span>
           </div>
           <div className="total-row grand-total">
             <span>Total</span>
-            <span>${totalAmount.toFixed(2)}</span>
+            <span>Rs {totalAmount.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -581,7 +581,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
       <div className="order-summary-brief">
         <p><i className="fas fa-calendar"></i> {formData.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}: {new Date(formData.deliveryDate).toLocaleDateString()}</p>
         <p><i className="fas fa-clock"></i> {formData.timeSlot}</p>
-        <p><i className="fas fa-dollar-sign"></i> Total: ${totalAmount.toFixed(2)}</p>
+        <p><i className="fas fa-coins"></i> Total: Rs {totalAmount.toFixed(2)}</p>
       </div>
       <button className="btn btn-primary" onClick={onClose}>
         <i className="fas fa-home"></i> Continue Shopping
@@ -635,7 +635,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-check"></i> Place Order - ${totalAmount.toFixed(2)}
+                      <i className="fas fa-check"></i> Place Order - Rs {totalAmount.toFixed(2)}
                     </>
                   )}
                 </button>

@@ -142,7 +142,7 @@ const Products = () => {
                   <h3>{product.name}</h3>
                   <p>{product.description}</p>
                   <div className="product-footer">
-                    <span className="product-price">${product.price}</span>
+                    <span className="product-price">Rs {product.price}</span>
                     <div className="product-actions">
                       <button className="add-to-cart-btn" onClick={(e) => handleAddToCart(product, e)}>
                         <i className="fas fa-cart-plus"></i>
