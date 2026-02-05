@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AsiBakers - Artisan Cake Shop</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-birthday-cake"></i>
+                <span>AsiBakers</span>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#products">Menu</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    <span class="subtitle">Welcome to</span>
+                    AsiBakers
+                </h1>
+                <p class="hero-description">
+                    Where Every Slice is a Piece of Heaven
+                    <i class="fas fa-heart"></i>
+                </p>
+                <p class="hero-tagline">
+                    Handcrafted cakes made with love, passion, and the finest ingredients
+                </p>
+                <div class="hero-buttons">
+                    <a href="#products" class="btn btn-primary">
+                        <i class="fas fa-cake-candles"></i> View Menu
+                    </a>
+                    <a href="#contact" class="btn btn-secondary">
+                        <i class="fas fa-phone"></i> Order Now
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="floating-card card-1">
+                    <i class="fas fa-cupcake"></i>
+                    <span>Fresh Daily</span>
+                </div>
+                <div class="floating-card card-2">
+                    <i class="fas fa-heart"></i>
+                    <span>Made with Love</span>
+                </div>
+                <div class="floating-card card-3">
+                    <i class="fas fa-star"></i>
+                    <span>Premium Quality</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-decoration">
+            <i class="fas fa-cookie-bite"></i>
+            <i class="fas fa-ice-cream"></i>
+            <i class="fas fa-candy-cane"></i>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Our Story</span>
+                <h2 class="section-title">About AsiBakers</h2>
+                <div class="title-decoration">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            <div class="about-content">
+                <div class="about-image">
+                    <div class="image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600" alt="Bakery">
+                        <div class="image-overlay">
+                            <i class="fas fa-gifts"></i>
+                        </div>
+                    </div>
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <i class="fas fa-birthday-cake"></i>
+                            <h3>500+</h3>
+                            <p>Cakes Made</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-smile"></i>
+                            <h3>400+</h3>
+                            <p>Happy Customers</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-text">
+                    <p class="lead">
+                        At AsiBakers, we believe every celebration deserves a beautiful, delicious cake that creates lasting memories.
+                    </p>
+                    <p>
+                        Founded with passion and dedication, AsiBakers has been creating artisan cakes that combine traditional baking techniques with modern, elegant designs. Each cake is handcrafted with premium ingredients and decorated with artistic precision.
+                    </p>
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <i class="fas fa-leaf"></i>
+                            <h4>Natural Ingredients</h4>
+                            <p>Only the finest, freshest ingredients</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-palette"></i>
+                            <h4>Custom Designs</h4>
+                            <p>Personalized to your vision</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-truck"></i>
+                            <h4>Free Delivery</h4>
+                            <p>In select areas</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-award"></i>
+                            <h4>Award Winning</h4>
+                            <p>Recognized for excellence</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section id="products" class="products">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Our Delights</span>
+                <h2 class="section-title">Signature Cakes</h2>
+                <div class="title-decoration">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-th"></i> All
+                </button>
+                <button class="filter-btn" data-filter="Special Cakes">
+                    <i class="fas fa-crown"></i> Special
+                </button>
+                <button class="filter-btn" data-filter="Fruit Cakes">
+                    <i class="fas fa-apple-alt"></i> Fruit
+                </button>
+                <button class="filter-btn" data-filter="Chocolate Cakes">
+                    <i class="fas fa-candy-cane"></i> Chocolate
+                </button>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                <!-- Products will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Sweet Creations</span>
+                <h2 class="section-title">Our Gallery</h2>
+                <div class="title-decoration">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=500" alt="Cake 1">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=500" alt="Cake 2">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=500" alt="Cake 3">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=500" alt="Cake 4">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1557925923-4702149a8177?w=500" alt="Cake 5">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500" alt="Cake 6">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Reviews</span>
+                <h2 class="section-title">What Our Customers Say</h2>
+                <div class="title-decoration">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "The most beautiful and delicious cake I've ever had! AsiBakers made my wedding day extra special."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <span>Bride</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Absolutely stunning unicorn cake for my daughter's birthday! She was over the moon!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <h4>Emily Davis</h4>
+                            <span>Happy Mom</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Professional service and amazing taste! Will definitely order again for future celebrations."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <h4>Lisa Martinez</h4>
+                            <span>Regular Customer</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Get In Touch</span>
+                <h2 class="section-title">Contact Us</h2>
+                <div class="title-decoration">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>Let's Create Something Sweet Together!</h3>
+                    <p>Have a special occasion coming up? We'd love to make it memorable with our delicious cakes.</p>
+                    
+                    <div class="info-items">
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <h4>Location</h4>
+                                <p>123 Sweet Street, Bakery District</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <h4>Phone</h4>
+                                <p>+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <h4>Email</h4>
+                                <p>hello@asibakers.com</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <h4>Hours</h4>
+                                <p>Mon - Sat: 9AM - 8PM<br>Sunday: 10AM - 6PM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                
+                <div class="contact-form-wrapper">
+                    <form id="contactForm" class="contact-form">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" required>
+                            <label for="name">Your Name</label>
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" required>
+                            <label for="email">Your Email</label>
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" id="phone" name="phone">
+                            <label for="phone">Phone Number</label>
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                            <label for="message">Your Message</label>
+                            <i class="fas fa-comment-dots"></i>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </form>
+                    <div id="formMessage" class="form-message"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-about">
+                    <h3>
+                        <i class="fas fa-birthday-cake"></i>
+                        AsiBakers
+                    </h3>
+                    <p>Creating sweet memories, one cake at a time. Made with love and the finest ingredients.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#products">Menu</a></li>
+                        <li><a href="#gallery">Gallery</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact Info</h4>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-envelope"></i> hello@asibakers.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Sweet Street</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 AsiBakers. All rights reserved. Made with <i class="fas fa-heart"></i></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>
+                <i class="fas fa-shopping-cart"></i>
+                Order Cake
+            </h2>
+            <form id="orderForm">
+                <div class="form-group">
+                    <input type="text" id="orderName" name="name" required>
+                    <label for="orderName">Your Name</label>
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="orderEmail" name="email" required>
+                    <label for="orderEmail">Your Email</label>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="orderPhone" name="phone" required>
+                    <label for="orderPhone">Phone Number</label>
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="orderProduct" name="product" readonly>
+                    <label for="orderProduct">Selected Cake</label>
+                    <i class="fas fa-cake-candles"></i>
+                </div>
+                <div class="form-group">
+                    <input type="date" id="orderDate" name="date" required>
+                    <label for="orderDate">Delivery Date</label>
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="form-group">
+                    <textarea id="orderMessage" name="message" rows="3"></textarea>
+                    <label for="orderMessage">Special Instructions</label>
+                    <i class="fas fa-comment"></i>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Place Order
+                </button>
+            </form>
+            <div id="orderFormMessage" class="form-message"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
