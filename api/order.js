@@ -1,4 +1,6 @@
-export default function handler(req, res) {
+import { connectToDatabase } from './db.js';
+
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,58 +16,74 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const orderData = req.body;
-    
-    // Generate order number
-    const orderNumber = 'ASI' + Date.now().toString().slice(-6);
-    
-    // Check if it's a cart-based order (has items array) or single product order
-    if (orderData.items && Array.isArray(orderData.items)) {
-      // Cart-based order
-      const { customer, delivery, items, payment, additional } = orderData;
+    try {
+      const { db } = await connectToDatabase();
+      const ordersCollection = db.collection('orders');
       
-      console.log('Cart Order received:', {
-        orderNumber,
-        customer,
-        delivery,
-        items,
-        payment,
-        additional,
-        timestamp: new Date().toISOString()
-      });
+      const orderData = req.body;
+      
+      // Generate order number
+      const orderNumber = 'ASI' + Date.now().toString().slice(-6);
+      
+      // Check if it's a cart-based order (has items array) or single product order
+      if (orderData.items && Array.isArray(orderData.items)) {
+        // Cart-based order
+        const { customer, delivery, items, payment, additional } = orderData;
+        
+        const order = {
+          orderNumber,
+          customer,
+          delivery,
+          items,
+          payment,
+          additional,
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          createdAt: new Date()
+        };
 
-      // In a real application, you would:
-      // 1. Validate the data
-      // 2. Process payment if card
-      // 3. Save to database
-      // 4. Send confirmation email
-      // 5. Notify the bakery
+        await ordersCollection.insertOne(order);
+        
+        console.log('Cart Order saved to MongoDB:', orderNumber);
 
-      res.status(200).json({ 
-        success: true, 
-        orderNumber,
-        message: `Your order #${orderNumber} has been placed! We will contact you shortly to confirm.`,
-        estimatedDelivery: delivery.date
-      });
-    } else {
-      // Single product order (legacy support)
-      const { name, email, phone, product, message, date } = orderData;
-      
-      console.log('Single Product Order received:', { 
-        orderNumber,
-        name, 
-        email, 
-        phone, 
-        product, 
-        message, 
-        date,
-        timestamp: new Date().toISOString()
-      });
-      
-      res.status(200).json({ 
-        success: true, 
-        orderNumber,
-        message: `Your order #${orderNumber} for ${product} has been received! We will contact you shortly.`
+        res.status(200).json({ 
+          success: true, 
+          orderNumber,
+          message: `Your order #${orderNumber} has been placed! We will contact you shortly to confirm.`,
+          estimatedDelivery: delivery.date
+        });
+      } else {
+        // Single product order (legacy support)
+        const { name, email, phone, product, message, date } = orderData;
+        
+        const order = {
+          orderNumber,
+          name, 
+          email, 
+          phone, 
+          product, 
+          message, 
+          date,
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          createdAt: new Date()
+        };
+
+        await ordersCollection.insertOne(order);
+        
+        console.log('Single Product Order saved to MongoDB:', orderNumber);
+        
+        res.status(200).json({ 
+          success: true, 
+          orderNumber,
+          message: `Your order #${orderNumber} for ${product} has been received! We will contact you shortly.`
+        });
+      }
+    } catch (error) {
+      console.error('Error saving order:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to place order. Please try again.'
       });
     }
   } else {

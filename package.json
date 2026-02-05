@@ -8,10 +8,17 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": ["bakery", "cakes", "website", "react", "vite"],
+  "keywords": [
+    "bakery",
+    "cakes",
+    "website",
+    "react",
+    "vite"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mongodb": "^6.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
