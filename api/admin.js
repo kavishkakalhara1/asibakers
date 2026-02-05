@@ -9,8 +9,32 @@ const generateToken = () => {
   return 'admin_' + Date.now() + '_' + Math.random().toString(36).substring(2);
 };
 
-// In-memory active tokens (consider using Redis in production)
-let activeTokens = [];
+// Token functions using MongoDB
+async function saveToken(db, token) {
+  const tokensCollection = db.collection('admin_tokens');
+  // Clean up expired tokens
+  await tokensCollection.deleteMany({ expiresAt: { $lt: new Date() } });
+  // Save new token (valid for 24 hours)
+  await tokensCollection.insertOne({
+    token,
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+  });
+}
+
+async function validateToken(db, token) {
+  const tokensCollection = db.collection('admin_tokens');
+  const tokenDoc = await tokensCollection.findOne({
+    token,
+    expiresAt: { $gt: new Date() }
+  });
+  return !!tokenDoc;
+}
+
+async function removeToken(db, token) {
+  const tokensCollection = db.collection('admin_tokens');
+  await tokensCollection.deleteOne({ token });
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -29,38 +53,45 @@ export default async function handler(req, res) {
 
   const { action } = req.query;
 
-  // Login endpoint (no auth required)
-  if (action === 'login' && req.method === 'POST') {
-    const { email, password } = req.body;
-    
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const token = generateToken();
-      activeTokens.push(token);
-      res.status(200).json({ 
-        success: true, 
-        token,
-        message: 'Login successful'
-      });
-    } else {
-      res.status(401).json({ 
-        success: false, 
-        message: 'Invalid credentials'
-      });
-    }
-    return;
-  }
-
-  // Verify token for protected routes
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.replace('Bearer ', '');
-  
-  if (!token || !activeTokens.includes(token)) {
-    res.status(401).json({ success: false, message: 'Unauthorized' });
-    return;
-  }
-
   try {
     const { db } = await connectToDatabase();
+
+    // Login endpoint (no auth required)
+    if (action === 'login' && req.method === 'POST') {
+      const { email, password } = req.body;
+      
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const token = generateToken();
+        await saveToken(db, token);
+        res.status(200).json({ 
+          success: true, 
+          token,
+          message: 'Login successful'
+        });
+      } else {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials'
+        });
+      }
+      return;
+    }
+
+    // Verify token for protected routes
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      res.status(401).json({ success: false, message: 'No token provided' });
+      return;
+    }
+    
+    const isValidToken = await validateToken(db, token);
+    if (!isValidToken) {
+      res.status(401).json({ success: false, message: 'Invalid or expired token. Please login again.' });
+      return;
+    }
+
     await initializeProducts(db);
     
     const productsCollection = db.collection('products');
@@ -69,7 +100,7 @@ export default async function handler(req, res) {
 
     // Logout
     if (action === 'logout' && req.method === 'POST') {
-      activeTokens = activeTokens.filter(t => t !== token);
+      await removeToken(db, token);
       res.status(200).json({ success: true, message: 'Logged out successfully' });
       return;
     }
