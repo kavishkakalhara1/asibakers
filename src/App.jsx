@@ -13,16 +13,28 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AutoScroll from './components/AutoScroll';
 import Admin from './components/admin/Admin';
+import NotFound from './components/NotFound';
 import './styles/App.css';
+
+// Valid routes for the application
+const VALID_ROUTES = ['/', '/admin', '/index.html'];
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentRoute, setCurrentRoute] = useState('home');
 
   useEffect(() => {
-    // Check if current path is /admin
+    // Check current route
     const checkRoute = () => {
-      setIsAdmin(window.location.pathname === '/admin' || window.location.hash === '#admin');
+      const pathname = window.location.pathname;
+      
+      if (pathname === '/admin' || window.location.hash === '#admin') {
+        setCurrentRoute('admin');
+      } else if (VALID_ROUTES.includes(pathname) || pathname.startsWith('/#')) {
+        setCurrentRoute('home');
+      } else {
+        setCurrentRoute('404');
+      }
     };
     
     checkRoute();
@@ -38,8 +50,13 @@ function App() {
   }, []);
 
   // Admin route
-  if (isAdmin) {
+  if (currentRoute === 'admin') {
     return <Admin />;
+  }
+
+  // 404 route
+  if (currentRoute === '404') {
+    return <NotFound />;
   }
 
   if (isLoading) {
