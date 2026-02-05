@@ -26,6 +26,9 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* Firefox scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-pink) var(--light-pink);
 }
 
 body {
@@ -35,6 +38,34 @@ body {
     overflow-x: hidden;
     background: linear-gradient(135deg, var(--cream) 0%, var(--light-pink) 100%);
     cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23ff69b4"><circle cx="12" cy="12" r="8" fill="%23ffe4f1"/><circle cx="12" cy="12" r="5" fill="%23ff69b4"/><circle cx="9" cy="10" r="1.5" fill="%23fff"/></svg>'), auto;
+}
+
+/* ============ Custom Scrollbar ============ */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-pink);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-pink), var(--soft-purple));
+    border-radius: 10px;
+    border: 2px solid var(--light-pink);
+    transition: all 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--soft-purple), var(--primary-pink));
+    border-color: var(--blush-pink);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--light-pink);
 }
 
 /* Custom Cursor for Clickable Elements */
@@ -831,12 +862,22 @@ section {
     background: linear-gradient(135deg, var(--light-pink) 0%, var(--lavender) 100%);
 }
 
+.filters,
 .filter-buttons {
     display: flex;
     justify-content: center;
     gap: 1rem;
     margin-bottom: 3rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar,
+.filter-buttons::-webkit-scrollbar {
+    display: none;
 }
 
 .filter-btn {
@@ -851,6 +892,8 @@ section {
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .filter-btn:hover,
@@ -2148,6 +2191,21 @@ section {
         transform: translateY(-50%) scale(0.9);
     }
     
+    .filters,
+    .filter-buttons {
+        justify-content: flex-start;
+        padding: 0.5rem 1rem;
+        margin-left: -20px;
+        margin-right: -20px;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .filter-btn {
+        padding: 10px 18px;
+        font-size: 0.9rem;
+    }
+    
     .section-indicators {
         padding: 10px 8px;
     }
@@ -2224,6 +2282,30 @@ section {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    .filters,
+    .filter-buttons {
+        gap: 0.75rem;
+    }
+    
+    .filter-btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        gap: 6px;
+    }
+    
+    .filter-btn i {
+        font-size: 0.8rem;
+    }
+    
+    .search-bar {
+        margin-bottom: 2rem;
+    }
+    
+    .search-bar input {
+        padding: 12px 45px;
+        font-size: 0.95rem;
     }
     
     .products-grid {
