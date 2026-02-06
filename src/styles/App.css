@@ -998,6 +998,47 @@ section {
     font-weight: 700;
 }
 
+.product-price-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.product-price-original {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: #999;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.product-price.discounted {
+    color: #e53e3e;
+}
+
+.product-discount-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 5px 15px rgba(229, 62, 62, 0.3);
+    z-index: 2;
+    animation: pulse-discount 2s infinite;
+}
+
+@keyframes pulse-discount {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
 .order-btn {
     background: var(--primary-pink);
     color: var(--white);

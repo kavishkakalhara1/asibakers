@@ -61,7 +61,14 @@ const CartModal = ({ onClose }) => {
                   <img src={item.image} alt={item.name} />
                   <div className="cart-item-details">
                     <h4>{item.name}</h4>
-                    <p className="cart-item-price">Rs {item.price}</p>
+                    {item.offer && item.offer.discount > 0 ? (
+                      <>
+                        <p className="cart-item-price" style={{ textDecoration: 'line-through', color: '#999', fontSize: '0.85rem', margin: 0 }}>Rs {item.price}</p>
+                        <p className="cart-item-price" style={{ color: '#e53e3e', fontWeight: 700, margin: 0 }}>Rs {Math.round(item.price * (1 - item.offer.discount / 100))}</p>
+                      </>
+                    ) : (
+                      <p className="cart-item-price">Rs {item.price}</p>
+                    )}
                   </div>
                   <div className="cart-item-controls">
                     <button

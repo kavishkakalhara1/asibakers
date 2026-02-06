@@ -157,6 +157,11 @@ const Products = () => {
                       <i className="fas fa-star"></i> Popular
                     </div>
                   )}
+                  {product.offer && product.offer.discount > 0 && (
+                    <div className="product-discount-badge">
+                      <i className="fas fa-tag"></i> {product.offer.label || `${product.offer.discount}% OFF`}
+                    </div>
+                  )}
                   <button
                     className={`favorite-btn ${favorites.includes(product.id) ? 'active' : ''}`}
                     onClick={(e) => handleToggleFavorite(product.id, e)}
@@ -169,7 +174,14 @@ const Products = () => {
                   <h3>{product.name}</h3>
                   <p>{product.description}</p>
                   <div className="product-footer">
-                    <span className="product-price">Rs {product.price.toLocaleString()}</span>
+                    {product.offer && product.offer.discount > 0 ? (
+                      <div className="product-price-wrapper">
+                        <span className="product-price-original">Rs {product.price.toLocaleString()}</span>
+                        <span className="product-price discounted">Rs {Math.round(product.price * (1 - product.offer.discount / 100)).toLocaleString()}</span>
+                      </div>
+                    ) : (
+                      <span className="product-price">Rs {product.price.toLocaleString()}</span>
+                    )}
                     <div className="product-actions">
                       <button className="add-to-cart-btn" onClick={(e) => handleAddToCart(product, e)}>
                         <i className="fas fa-cart-plus"></i>

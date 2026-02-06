@@ -72,7 +72,14 @@ export const AppProvider = ({ children }) => {
     setCart([]);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const getEffectivePrice = (item) => {
+    if (item.offer && item.offer.discount > 0) {
+      return Math.round(item.price * (1 - item.offer.discount / 100));
+    }
+    return item.price;
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (getEffectivePrice(item) * item.quantity), 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
