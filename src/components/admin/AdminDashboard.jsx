@@ -4,6 +4,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -31,19 +32,22 @@ const AdminDashboard = ({ token, onLogout }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [productsRes, ordersRes, statsRes] = await Promise.all([
+      const [productsRes, ordersRes, statsRes, reviewsRes] = await Promise.all([
         fetch('/api/admin?action=products', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=orders', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin?action=stats', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/admin?action=stats', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin?action=reviews', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const productsData = await productsRes.json();
       const ordersData = await ordersRes.json();
       const statsData = await statsRes.json();
+      const reviewsData = await reviewsRes.json();
 
       if (productsData.success) setProducts(productsData.products);
       if (ordersData.success) setOrders(ordersData.orders);
       if (statsData.success) setStats(statsData.stats);
+      if (reviewsData.success) setReviews(reviewsData.reviews);
     } catch (error) {
       showMessage('error', 'Failed to fetch data');
     } finally {
@@ -249,6 +253,54 @@ const AdminDashboard = ({ token, onLogout }) => {
     }
   };
 
+  const handleToggleReview = async (id) => {
+    try {
+      const response = await fetch('/api/admin?action=reviews', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', data.message);
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to update review');
+    }
+  };
+
+  const handleDeleteReview = async (id) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+
+    try {
+      const response = await fetch('/api/admin?action=reviews', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', 'Review deleted successfully!');
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to delete review');
+    }
+  };
+
   const resetProductForm = () => {
     setProductForm({
       name: '',
@@ -329,6 +381,16 @@ const AdminDashboard = ({ token, onLogout }) => {
             )}
           </button>
           <button
+            className={`admin-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reviews')}
+          >
+            <i className="fas fa-star"></i>
+            Reviews
+            {reviews.filter(r => !r.hidden).length > 0 && (
+              <span className="badge" style={{ background: '#ffd700', color: '#8b6914' }}>{reviews.length}</span>
+            )}
+          </button>
+          <button
             className={`admin-nav-item ${activeTab === 'offers' ? 'active' : ''}`}
             onClick={() => setActiveTab('offers')}
           >
@@ -357,6 +419,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             {activeTab === 'dashboard' && 'Dashboard Overview'}
             {activeTab === 'products' && 'Manage Products'}
             {activeTab === 'orders' && 'Order Management'}
+            {activeTab === 'reviews' && 'Customer Reviews'}
             {activeTab === 'offers' && 'Special Offers'}
           </h1>
           <div className="admin-user">
@@ -428,6 +491,15 @@ const AdminDashboard = ({ token, onLogout }) => {
               <div className="stat-info">
                 <h3>{stats.completedOrders}</h3>
                 <p>Completed Orders</p>
+              </div>
+            </div>
+            <div className="admin-stat-card">
+              <div className="stat-icon reviews">
+                <i className="fas fa-star"></i>
+              </div>
+              <div className="stat-info">
+                <h3>{stats.totalReviews || 0}</h3>
+                <p>Reviews ({stats.avgRating || 0} ★)</p>
               </div>
             </div>
           </div>
@@ -556,6 +628,79 @@ const AdminDashboard = ({ token, onLogout }) => {
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                           </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === 'reviews' && (
+          <div className="admin-reviews">
+            {reviews.length === 0 ? (
+              <div className="admin-empty">
+                <i className="fas fa-star"></i>
+                <p>No reviews yet</p>
+              </div>
+            ) : (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Rating</th>
+                      <th>Review</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reviews.map(review => (
+                      <tr key={review._id} className={review.hidden ? 'row-hidden' : ''}>
+                        <td>
+                          <div><strong>{review.name}</strong></div>
+                          {review.email && <small>{review.email}</small>}
+                        </td>
+                        <td>
+                          <div className="review-stars">
+                            {Array.from({ length: 5 }, (_, i) => (
+                              <i key={i} className={`fas fa-star ${i < (review.rating || 5) ? 'filled' : 'empty'}`}></i>
+                            ))}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="review-text-cell">{review.text}</div>
+                        </td>
+                        <td>
+                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td>
+                          <span className={`status-badge ${review.hidden ? 'cancelled' : 'completed'}`}>
+                            {review.hidden ? 'Hidden' : 'Visible'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="action-btns">
+                            <button
+                              className={`admin-btn-icon ${review.hidden ? 'edit' : 'offer'}`}
+                              onClick={() => handleToggleReview(review._id)}
+                              title={review.hidden ? 'Show Review' : 'Hide Review'}
+                            >
+                              <i className={`fas ${review.hidden ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+                            </button>
+                            <button
+                              className="admin-btn-icon delete"
+                              onClick={() => handleDeleteReview(review._id)}
+                              title="Delete Review"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

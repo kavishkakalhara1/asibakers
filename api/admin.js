@@ -97,6 +97,7 @@ export default async function handler(req, res) {
     const productsCollection = db.collection('products');
     const ordersCollection = db.collection('orders');
     const contactsCollection = db.collection('contacts');
+    const reviewsCollection = db.collection('reviews');
 
     // Logout
     if (action === 'logout' && req.method === 'POST') {
@@ -276,11 +277,59 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Get all reviews (admin - includes hidden)
+    if (action === 'reviews' && req.method === 'GET') {
+      const reviews = await reviewsCollection.find({}).sort({ createdAt: -1 }).toArray();
+      res.status(200).json({ success: true, reviews });
+      return;
+    }
+
+    // Toggle review visibility
+    if (action === 'reviews' && req.method === 'PUT') {
+      const { id } = req.body;
+      const { ObjectId } = await import('mongodb');
+      const review = await reviewsCollection.findOne({ _id: new ObjectId(id) });
+      
+      if (!review) {
+        res.status(404).json({ success: false, message: 'Review not found' });
+        return;
+      }
+      
+      const updatedReview = await reviewsCollection.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: { hidden: !review.hidden, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        review: updatedReview, 
+        message: `Review ${updatedReview.hidden ? 'hidden' : 'visible'}` 
+      });
+      return;
+    }
+
+    // Delete review
+    if (action === 'reviews' && req.method === 'DELETE') {
+      const { id } = req.body;
+      const { ObjectId } = await import('mongodb');
+      const result = await reviewsCollection.deleteOne({ _id: new ObjectId(id) });
+      
+      if (result.deletedCount === 0) {
+        res.status(404).json({ success: false, message: 'Review not found' });
+        return;
+      }
+      
+      res.status(200).json({ success: true, message: 'Review deleted successfully' });
+      return;
+    }
+
     // Get dashboard stats
     if (action === 'stats' && req.method === 'GET') {
       const products = await productsCollection.find({}).toArray();
       const orders = await ordersCollection.find({}).toArray();
       const contacts = await contactsCollection.find({}).toArray();
+      const reviews = await reviewsCollection.find({}).toArray();
       
       const totalProducts = products.length;
       const specialProducts = products.filter(p => p.isSpecial).length;
@@ -290,6 +339,8 @@ export default async function handler(req, res) {
       const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
       const totalContacts = contacts.length;
       const unreadContacts = contacts.filter(c => c.status === 'unread').length;
+      const totalReviews = reviews.length;
+      const hiddenReviews = reviews.filter(r => r.hidden).length;
       
       // Calculate total revenue from completed orders
       const totalRevenue = orders
@@ -300,6 +351,11 @@ export default async function handler(req, res) {
           }
           return sum;
         }, 0);
+
+      // Calculate average rating
+      const avgRating = reviews.length > 0
+        ? (reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / reviews.length).toFixed(1)
+        : 0;
       
       res.status(200).json({ 
         success: true, 
@@ -312,7 +368,10 @@ export default async function handler(req, res) {
           completedOrders,
           totalContacts,
           unreadContacts,
-          totalRevenue
+          totalRevenue,
+          totalReviews,
+          hiddenReviews,
+          avgRating
         }
       });
       return;

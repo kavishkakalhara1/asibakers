@@ -382,6 +382,7 @@
 .stat-icon.orders { background: linear-gradient(135deg, #17a2b8, #5bc0de); }
 .stat-icon.pending { background: linear-gradient(135deg, #ffc107, #ffdb58); color: #8b6914; }
 .stat-icon.completed { background: linear-gradient(135deg, #28a745, #7dcea0); }
+.stat-icon.reviews { background: linear-gradient(135deg, #ffd700, #ff69b4); }
 
 .stat-info h3 {
   font-size: 2rem;
@@ -701,6 +702,44 @@
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* Reviews Tab */
+.admin-reviews {
+  padding: 0;
+}
+
+.review-stars .fa-star {
+  font-size: 0.9rem;
+}
+
+.review-stars .fa-star.filled {
+  color: #ffd700;
+}
+
+.review-stars .fa-star.empty {
+  color: #ddd;
+}
+
+.review-text-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.9rem;
+  color: var(--admin-text-light);
+  line-height: 1.5;
+}
+
+.admin-table tr.row-hidden {
+  opacity: 0.5;
+  background: #fafafa;
+}
+
+.admin-table tr.row-hidden:hover {
+  opacity: 0.7;
 }
 
 /* Modal */
