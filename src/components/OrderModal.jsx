@@ -8,6 +8,7 @@ const OrderModal = ({ productName, onClose }) => {
     email: '',
     phone: '',
     product: productName,
+    quantity: 1,
     date: '',
     message: ''
   });
@@ -46,7 +47,7 @@ const OrderModal = ({ productName, onClose }) => {
       
       if (data.success) {
         addToast(data.message, 'success');
-        setFormData({ name: '', email: '', phone: '', product: productName, date: '', message: '' });
+        setFormData({ name: '', email: '', phone: '', product: productName, quantity: 1, date: '', message: '' });
         setTimeout(() => {
           onClose();
         }, 2000);
@@ -118,6 +119,28 @@ const OrderModal = ({ productName, onClose }) => {
             />
             <label htmlFor="orderProduct">Product</label>
             <i className="fas fa-birthday-cake"></i>
+          </div>
+          <div className="form-group">
+            <div className="quantity-selector">
+              <label className="quantity-label">Quantity</label>
+              <div className="quantity-controls">
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => setFormData(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))}
+                >
+                  <i className="fas fa-minus"></i>
+                </button>
+                <span className="qty-value">{formData.quantity}</span>
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => setFormData(prev => ({ ...prev, quantity: prev.quantity + 1 }))}
+                >
+                  <i className="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
           </div>
           <div className="form-group">
             <input 

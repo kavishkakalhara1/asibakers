@@ -54,14 +54,15 @@ export default async function handler(req, res) {
         });
       } else {
         // Single product order (legacy support)
-        const { name, email, phone, product, message, date } = orderData;
+        const { name, email, phone, product, message, date, quantity } = orderData;
         
         const order = {
           orderNumber,
           name, 
           email, 
           phone, 
-          product, 
+          product,
+          quantity: quantity || 1,
           message, 
           date,
           status: 'pending',

@@ -1808,6 +1808,57 @@ section {
     transform: rotate(90deg);
 }
 
+/* Quantity Selector */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.quantity-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dark-text);
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--light-pink);
+    border-radius: 25px;
+    padding: 5px 10px;
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary-pink);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.qty-btn:hover {
+    background: var(--soft-purple);
+    transform: scale(1.1);
+}
+
+.qty-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: center;
+    color: var(--dark-text);
+}
+
 /* ============ Animations ============ */
 @keyframes fadeIn {
     from {
