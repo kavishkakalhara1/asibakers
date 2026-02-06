@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,6 +19,13 @@ const AdminDashboard = ({ token, onLogout }) => {
     active: true
   });
   const [popupPreview, setPopupPreview] = useState(false);
+
+  // Order management state
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [orderDateFilter, setOrderDateFilter] = useState('all');
 
   const [productForm, setProductForm] = useState({
     name: '',
