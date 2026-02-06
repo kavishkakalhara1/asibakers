@@ -426,6 +426,297 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Get transactions / financial data
+    if (action === 'transactions' && req.method === 'GET') {
+      const orders = await ordersCollection.find({}).sort({ createdAt: -1 }).toArray();
+      const expensesCollection = db.collection('expenses');
+      const expenses = await expensesCollection.find({}).sort({ date: -1 }).toArray();
+
+      // Build transaction list from orders
+      const transactions = orders.map(order => {
+        const total = order.payment?.total || (order.items && Array.isArray(order.items)
+          ? order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 0);
+        return {
+          _id: order._id,
+          type: 'income',
+          category: 'Order',
+          description: `Order #${order.orderNumber}`,
+          amount: total,
+          status: order.status || 'pending',
+          date: order.createdAt || order.timestamp,
+          orderNumber: order.orderNumber,
+          customer: order.customer?.name || order.name || 'N/A',
+          paymentMethod: order.payment?.method || 'cash',
+          items: order.items || []
+        };
+      });
+
+      // Add expenses to transactions
+      const expenseTransactions = expenses.map(exp => ({
+        _id: exp._id,
+        type: 'expense',
+        category: exp.category || 'General',
+        description: exp.description,
+        amount: exp.amount,
+        status: 'completed',
+        date: exp.date,
+        paymentMethod: exp.paymentMethod || 'cash',
+        note: exp.note || ''
+      }));
+
+      const allTransactions = [...transactions, ...expenseTransactions]
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      res.status(200).json({ success: true, transactions: allTransactions, expenses });
+      return;
+    }
+
+    // Add expense
+    if (action === 'expenses' && req.method === 'POST') {
+      const expensesCollection = db.collection('expenses');
+      const { description, amount, category, date, paymentMethod, note } = req.body;
+
+      if (!description || !amount) {
+        res.status(400).json({ success: false, message: 'Description and amount are required' });
+        return;
+      }
+
+      const expense = {
+        description,
+        amount: parseFloat(amount),
+        category: category || 'General',
+        date: date || new Date().toISOString(),
+        paymentMethod: paymentMethod || 'cash',
+        note: note || '',
+        createdAt: new Date()
+      };
+
+      await expensesCollection.insertOne(expense);
+      res.status(201).json({ success: true, expense, message: 'Expense added successfully' });
+      return;
+    }
+
+    // Delete expense
+    if (action === 'expenses' && req.method === 'DELETE') {
+      const { id } = req.body;
+      const { ObjectId } = await import('mongodb');
+      const expensesCollection = db.collection('expenses');
+      const result = await expensesCollection.deleteOne({ _id: new ObjectId(id) });
+
+      if (result.deletedCount === 0) {
+        res.status(404).json({ success: false, message: 'Expense not found' });
+        return;
+      }
+
+      res.status(200).json({ success: true, message: 'Expense deleted successfully' });
+      return;
+    }
+
+    // Get financial summary / budget data
+    if (action === 'financial-summary' && req.method === 'GET') {
+      const orders = await ordersCollection.find({}).toArray();
+      const expensesCollection = db.collection('expenses');
+      const expenses = await expensesCollection.find({}).toArray();
+      const budgetCollection = db.collection('budget');
+      const budget = await budgetCollection.findOne({});
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+      const getOrderTotal = (order) => {
+        if (order.payment?.total) return order.payment.total;
+        if (order.items && Array.isArray(order.items)) {
+          return order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+        return 0;
+      };
+
+      const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+
+      // Revenue calculations
+      const totalRevenue = completedOrders.reduce((sum, o) => sum + getOrderTotal(o), 0);
+      const monthlyRevenue = completedOrders
+        .filter(o => new Date(o.createdAt || o.timestamp) >= startOfMonth)
+        .reduce((sum, o) => sum + getOrderTotal(o), 0);
+      const lastMonthRevenue = completedOrders
+        .filter(o => {
+          const d = new Date(o.createdAt || o.timestamp);
+          return d >= startOfLastMonth && d <= endOfLastMonth;
+        })
+        .reduce((sum, o) => sum + getOrderTotal(o), 0);
+      const yearlyRevenue = completedOrders
+        .filter(o => new Date(o.createdAt || o.timestamp) >= startOfYear)
+        .reduce((sum, o) => sum + getOrderTotal(o), 0);
+
+      // Expense calculations
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const monthlyExpenses = expenses
+        .filter(e => new Date(e.date) >= startOfMonth)
+        .reduce((sum, e) => sum + e.amount, 0);
+      const lastMonthExpenses = expenses
+        .filter(e => {
+          const d = new Date(e.date);
+          return d >= startOfLastMonth && d <= endOfLastMonth;
+        })
+        .reduce((sum, e) => sum + e.amount, 0);
+      const yearlyExpenses = expenses
+        .filter(e => new Date(e.date) >= startOfYear)
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      // Profit
+      const totalProfit = totalRevenue - totalExpenses;
+      const monthlyProfit = monthlyRevenue - monthlyExpenses;
+      const yearlyProfit = yearlyRevenue - yearlyExpenses;
+
+      // Revenue growth
+      const revenueGrowth = lastMonthRevenue > 0
+        ? (((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100).toFixed(1)
+        : 0;
+
+      // Average order value
+      const avgOrderValue = completedOrders.length > 0
+        ? (totalRevenue / completedOrders.length).toFixed(0)
+        : 0;
+
+      // Monthly revenue breakdown (last 12 months)
+      const monthlyBreakdown = [];
+      for (let i = 11; i >= 0; i--) {
+        const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+        const mRevenue = completedOrders
+          .filter(o => {
+            const d = new Date(o.createdAt || o.timestamp);
+            return d >= mStart && d <= mEnd;
+          })
+          .reduce((sum, o) => sum + getOrderTotal(o), 0);
+        const mExpense = expenses
+          .filter(e => {
+            const d = new Date(e.date);
+            return d >= mStart && d <= mEnd;
+          })
+          .reduce((sum, e) => sum + e.amount, 0);
+        const mOrders = completedOrders
+          .filter(o => {
+            const d = new Date(o.createdAt || o.timestamp);
+            return d >= mStart && d <= mEnd;
+          }).length;
+        monthlyBreakdown.push({
+          month: mStart.toLocaleString('en-US', { month: 'short', year: 'numeric' }),
+          revenue: mRevenue,
+          expenses: mExpense,
+          profit: mRevenue - mExpense,
+          orders: mOrders
+        });
+      }
+
+      // Category-wise revenue
+      const categoryRevenue = {};
+      completedOrders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            const cat = item.category || 'Uncategorized';
+            categoryRevenue[cat] = (categoryRevenue[cat] || 0) + (item.price * item.quantity);
+          });
+        }
+      });
+
+      // Expense categories
+      const expenseCategories = {};
+      expenses.forEach(exp => {
+        const cat = exp.category || 'General';
+        expenseCategories[cat] = (expenseCategories[cat] || 0) + exp.amount;
+      });
+
+      // Payment method breakdown
+      const paymentMethods = {};
+      completedOrders.forEach(order => {
+        const method = order.payment?.method || 'cash';
+        paymentMethods[method] = (paymentMethods[method] || 0) + getOrderTotal(order);
+      });
+
+      // Daily revenue for current month
+      const dailyRevenue = [];
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayStart = new Date(now.getFullYear(), now.getMonth(), d);
+        const dayEnd = new Date(now.getFullYear(), now.getMonth(), d + 1);
+        const dayRev = completedOrders
+          .filter(o => {
+            const od = new Date(o.createdAt || o.timestamp);
+            return od >= dayStart && od < dayEnd;
+          })
+          .reduce((sum, o) => sum + getOrderTotal(o), 0);
+        dailyRevenue.push({ day: d, revenue: dayRev });
+      }
+
+      // Top products
+      const productSales = {};
+      completedOrders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            if (!productSales[item.name]) {
+              productSales[item.name] = { name: item.name, quantity: 0, revenue: 0 };
+            }
+            productSales[item.name].quantity += item.quantity;
+            productSales[item.name].revenue += item.price * item.quantity;
+          });
+        }
+      });
+      const topProducts = Object.values(productSales)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+
+      res.status(200).json({
+        success: true,
+        summary: {
+          totalRevenue,
+          monthlyRevenue,
+          lastMonthRevenue,
+          yearlyRevenue,
+          totalExpenses,
+          monthlyExpenses,
+          lastMonthExpenses,
+          yearlyExpenses,
+          totalProfit,
+          monthlyProfit,
+          yearlyProfit,
+          revenueGrowth,
+          avgOrderValue: parseFloat(avgOrderValue),
+          totalOrders: orders.length,
+          completedOrders: completedOrders.length,
+          pendingOrders: orders.filter(o => o.status === 'pending').length,
+          monthlyBreakdown,
+          categoryRevenue,
+          expenseCategories,
+          paymentMethods,
+          dailyRevenue,
+          topProducts,
+          budget: budget || null
+        }
+      });
+      return;
+    }
+
+    // Save budget
+    if (action === 'budget' && req.method === 'POST') {
+      const budgetCollection = db.collection('budget');
+      const { monthlyBudget, categories } = req.body;
+
+      await budgetCollection.deleteMany({});
+      const budgetData = {
+        monthlyBudget: parseFloat(monthlyBudget) || 0,
+        categories: categories || {},
+        updatedAt: new Date()
+      };
+      await budgetCollection.insertOne(budgetData);
+
+      res.status(200).json({ success: true, budget: budgetData, message: 'Budget saved successfully' });
+      return;
+    }
+
     // Get dashboard stats
     if (action === 'stats' && req.method === 'GET') {
       const products = await productsCollection.find({}).toArray();

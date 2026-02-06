@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import TransactionsDashboard from './TransactionsDashboard';
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -795,6 +796,13 @@ const AdminDashboard = ({ token, onLogout }) => {
             Offers
           </button>
           <button
+            className={`admin-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transactions')}
+          >
+            <i className="fas fa-money-bill-wave"></i>
+            Transactions
+          </button>
+          <button
             className={`admin-nav-item ${activeTab === 'popup' ? 'active' : ''}`}
             onClick={() => setActiveTab('popup')}
           >
@@ -828,6 +836,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             {activeTab === 'orders' && 'Order Management'}
             {activeTab === 'reviews' && 'Customer Reviews'}
             {activeTab === 'offers' && 'Special Offers'}
+            {activeTab === 'transactions' && 'Financial Dashboard'}
             {activeTab === 'popup' && 'Popup Manager'}
           </h1>
           <div className="admin-user">
@@ -1323,6 +1332,11 @@ const AdminDashboard = ({ token, onLogout }) => {
               )}
             </div>
           </div>
+        )}
+
+        {/* Transactions / Financial Dashboard Tab */}
+        {activeTab === 'transactions' && (
+          <TransactionsDashboard token={token} />
         )}
 
         {/* Popup Tab */}
