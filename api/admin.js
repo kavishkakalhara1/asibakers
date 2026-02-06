@@ -252,6 +252,47 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Delete order
+    if (action === 'orders' && req.method === 'DELETE') {
+      const { orderNumber } = req.body;
+      const result = await ordersCollection.deleteOne({ orderNumber });
+      
+      if (result.deletedCount === 0) {
+        res.status(404).json({ success: false, message: 'Order not found' });
+        return;
+      }
+      
+      res.status(200).json({ success: true, message: 'Order deleted successfully' });
+      return;
+    }
+
+    // Add note to order
+    if (action === 'order-note' && req.method === 'POST') {
+      const { orderNumber, note } = req.body;
+      
+      if (!orderNumber || !note) {
+        res.status(400).json({ success: false, message: 'Order number and note are required' });
+        return;
+      }
+      
+      const result = await ordersCollection.findOneAndUpdate(
+        { orderNumber },
+        { 
+          $push: { notes: { text: note, date: new Date().toISOString() } },
+          $set: { updatedAt: new Date() }
+        },
+        { returnDocument: 'after' }
+      );
+      
+      if (!result) {
+        res.status(404).json({ success: false, message: 'Order not found' });
+        return;
+      }
+      
+      res.status(200).json({ success: true, order: result, message: 'Note added' });
+      return;
+    }
+
     // Get contacts
     if (action === 'contacts' && req.method === 'GET') {
       const contacts = await contactsCollection.find({}).sort({ createdAt: -1 }).toArray();

@@ -401,6 +401,303 @@ const AdminDashboard = ({ token, onLogout }) => {
     }
   };
 
+  // --- Order Management Functions ---
+  const handleDeleteOrder = async (orderNumber) => {
+    if (!confirm(`Are you sure you want to delete order #${orderNumber}?`)) return;
+    try {
+      const response = await fetch('/api/admin?action=orders', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderNumber })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', 'Order deleted successfully!');
+        if (showOrderModal && selectedOrder?.orderNumber === orderNumber) {
+          setShowOrderModal(false);
+          setSelectedOrder(null);
+        }
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to delete order');
+    }
+  };
+
+  const handleAddOrderNote = async (orderNumber, note) => {
+    try {
+      const response = await fetch('/api/admin?action=order-note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderNumber, note })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', 'Note added!');
+        fetchData();
+        // Update selected order
+        setSelectedOrder(prev => prev ? { ...prev, notes: [...(prev.notes || []), { text: note, date: new Date().toISOString() }] } : null);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to add note');
+    }
+  };
+
+  const getFilteredOrders = useCallback(() => {
+    let filtered = [...orders];
+
+    // Status filter
+    if (orderStatusFilter !== 'all') {
+      filtered = filtered.filter(o => (o.status || 'pending') === orderStatusFilter);
+    }
+
+    // Date filter
+    if (orderDateFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      filtered = filtered.filter(o => {
+        const orderDate = new Date(o.createdAt || o.timestamp);
+        switch (orderDateFilter) {
+          case 'today':
+            return orderDate >= today;
+          case 'week': {
+            const weekAgo = new Date(today);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return orderDate >= weekAgo;
+          }
+          case 'month': {
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            return orderDate >= monthAgo;
+          }
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Search
+    if (orderSearch.trim()) {
+      const s = orderSearch.toLowerCase().trim();
+      filtered = filtered.filter(o =>
+        (o.orderNumber || '').toLowerCase().includes(s) ||
+        (o.customer?.name || o.name || '').toLowerCase().includes(s) ||
+        (o.customer?.email || o.email || '').toLowerCase().includes(s) ||
+        (o.customer?.phone || o.phone || '').toLowerCase().includes(s)
+      );
+    }
+
+    return filtered;
+  }, [orders, orderStatusFilter, orderDateFilter, orderSearch]);
+
+  const getOrderTotal = (order) => {
+    if (order.payment?.total) return order.payment.total;
+    if (order.items && Array.isArray(order.items)) {
+      return order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+    return 0;
+  };
+
+  const formatCurrency = (amount) => {
+    return `Rs ${(amount || 0).toLocaleString()}`;
+  };
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getOrderStats = useCallback(() => {
+    const total = orders.length;
+    const pending = orders.filter(o => (o.status || 'pending') === 'pending').length;
+    const confirmed = orders.filter(o => o.status === 'confirmed').length;
+    const preparing = orders.filter(o => o.status === 'preparing').length;
+    const ready = orders.filter(o => o.status === 'ready').length;
+    const delivered = orders.filter(o => o.status === 'delivered').length;
+    const completed = orders.filter(o => o.status === 'completed').length;
+    const cancelled = orders.filter(o => o.status === 'cancelled').length;
+    const revenue = orders
+      .filter(o => o.status === 'completed' || o.status === 'delivered')
+      .reduce((sum, o) => sum + getOrderTotal(o), 0);
+    return { total, pending, confirmed, preparing, ready, delivered, completed, cancelled, revenue };
+  }, [orders]);
+
+  const generateInvoice = (order) => {
+    const orderTotal = getOrderTotal(order);
+    const items = order.items || [];
+    const customer = order.customer || { name: order.name, email: order.email, phone: order.phone };
+    const delivery = order.delivery || {};
+    const payment = order.payment || {};
+    const additional = order.additional || {};
+
+    const invoiceHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice - ${order.orderNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background: #f5f5f5; }
+    .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 40px; }
+    .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #ff69b4; }
+    .brand h1 { font-size: 28px; color: #ff69b4; margin-bottom: 5px; }
+    .brand p { color: #666; font-size: 13px; line-height: 1.6; }
+    .invoice-title { text-align: right; }
+    .invoice-title h2 { font-size: 32px; color: #333; letter-spacing: 2px; }
+    .invoice-title .invoice-number { color: #ff69b4; font-weight: 600; font-size: 16px; margin-top: 5px; }
+    .invoice-title .invoice-date { color: #666; font-size: 13px; margin-top: 5px; }
+    .info-section { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
+    .info-box { flex: 1; background: #fdf2f8; padding: 20px; border-radius: 10px; }
+    .info-box h3 { color: #ff69b4; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .info-box p { font-size: 13px; line-height: 1.8; color: #444; }
+    .info-box p strong { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    thead th { background: #ff69b4; color: white; padding: 12px 16px; text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; text-align: right; }
+    tbody td { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+    tbody td:last-child { text-align: right; font-weight: 600; }
+    tbody tr:hover { background: #fdf2f8; }
+    .totals { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+    .totals-box { width: 300px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #555; }
+    .totals-row.total { border-top: 2px solid #ff69b4; padding-top: 12px; margin-top: 8px; font-size: 18px; font-weight: 700; color: #333; }
+    .notes-section { background: #fdf2f8; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+    .notes-section h3 { color: #ff69b4; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .notes-section p { font-size: 13px; color: #555; line-height: 1.6; }
+    .footer { text-align: center; padding-top: 20px; border-top: 1px solid #eee; color: #999; font-size: 12px; line-height: 1.8; }
+    .footer strong { color: #ff69b4; }
+    .status-pill { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #cce5ff; color: #004085; }
+    .status-preparing { background: #d4edda; color: #155724; }
+    .status-ready { background: #d1ecf1; color: #0c5460; }
+    .status-delivered, .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    @media print {
+      body { background: white; }
+      .invoice { padding: 20px; box-shadow: none; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice">
+    <div class="no-print" style="text-align:center;margin-bottom:20px;">
+      <button onclick="window.print()" style="background:#ff69b4;color:white;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">
+        🖨️ Print / Save as PDF
+      </button>
+    </div>
+    <div class="invoice-header">
+      <div class="brand">
+        <h1>🎂 Asi Bakers</h1>
+        <p>Premium Cakes & Confectionery<br>Freshly Baked with Love</p>
+      </div>
+      <div class="invoice-title">
+        <h2>INVOICE</h2>
+        <div class="invoice-number">#${order.orderNumber}</div>
+        <div class="invoice-date">${formatDateTime(order.createdAt || order.timestamp)}</div>
+        <div style="margin-top:8px;"><span class="status-pill status-${order.status || 'pending'}">${order.status || 'pending'}</span></div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-box">
+        <h3>Customer Details</h3>
+        <p><strong>${customer.name || 'N/A'}</strong></p>
+        <p>${customer.email || 'N/A'}</p>
+        <p>${customer.phone || 'N/A'}</p>
+      </div>
+      <div class="info-box">
+        <h3>Delivery Details</h3>
+        <p><strong>Type:</strong> ${delivery.type === 'pickup' ? 'Store Pickup' : 'Home Delivery'}</p>
+        ${delivery.address ? `<p><strong>Address:</strong> ${delivery.address.street || ''}, ${delivery.address.city || ''} ${delivery.address.zipCode || ''}</p>` : ''}
+        <p><strong>Date:</strong> ${delivery.date || order.date || 'N/A'}</p>
+        ${delivery.timeSlot ? `<p><strong>Time:</strong> ${delivery.timeSlot}</p>` : ''}
+      </div>
+      <div class="info-box">
+        <h3>Payment Info</h3>
+        <p><strong>Method:</strong> ${(payment.method || 'Cash').charAt(0).toUpperCase() + (payment.method || 'cash').slice(1)}</p>
+        <p><strong>Status:</strong> ${order.status === 'completed' || order.status === 'delivered' ? 'Paid' : 'Pending'}</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.length > 0 ? items.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>Rs ${item.price.toLocaleString()}</td>
+          <td>Rs ${(item.price * item.quantity).toLocaleString()}</td>
+        </tr>`).join('') : `
+        <tr>
+          <td>1</td>
+          <td>${order.product || 'Custom Order'}</td>
+          <td>1</td>
+          <td>Rs ${orderTotal.toLocaleString()}</td>
+          <td>Rs ${orderTotal.toLocaleString()}</td>
+        </tr>`}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals-box">
+        <div class="totals-row"><span>Subtotal</span><span>Rs ${(payment.subtotal || orderTotal).toLocaleString()}</span></div>
+        <div class="totals-row"><span>Delivery Fee</span><span>Rs ${(payment.deliveryFee || 0).toLocaleString()}</span></div>
+        <div class="totals-row total"><span>Total</span><span>Rs ${orderTotal.toLocaleString()}</span></div>
+      </div>
+    </div>
+
+    ${additional.specialInstructions || additional.giftMessage || order.message ? `
+    <div class="notes-section">
+      <h3>Additional Notes</h3>
+      ${additional.specialInstructions ? `<p><strong>Instructions:</strong> ${additional.specialInstructions}</p>` : ''}
+      ${additional.isGift ? `<p><strong>🎁 Gift Order</strong>${additional.giftMessage ? ` - "${additional.giftMessage}"` : ''}</p>` : ''}
+      ${order.message ? `<p><strong>Message:</strong> ${order.message}</p>` : ''}
+    </div>` : ''}
+
+    <div class="footer">
+      <p><strong>Thank you for choosing Asi Bakers!</strong></p>
+      <p>For any questions about this order, please contact us.</p>
+      <p style="margin-top:8px;">This is a computer-generated invoice.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([invoiceHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Invoice-${order.orderNumber}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showMessage('success', `Invoice downloaded for #${order.orderNumber}`);
+  };
+
   const resetProductForm = () => {
     setProductForm({
       name: '',
@@ -690,10 +987,116 @@ const AdminDashboard = ({ token, onLogout }) => {
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="admin-orders">
-            {orders.length === 0 ? (
+            {/* Order Stats Bar */}
+            {(() => {
+              const os = getOrderStats();
+              return (
+                <div className="order-stats-bar">
+                  <div className="order-stat-pill total" onClick={() => setOrderStatusFilter('all')}>
+                    <i className="fas fa-shopping-bag"></i>
+                    <span>{os.total}</span>
+                    <small>Total</small>
+                  </div>
+                  <div className="order-stat-pill pending" onClick={() => setOrderStatusFilter('pending')}>
+                    <i className="fas fa-clock"></i>
+                    <span>{os.pending}</span>
+                    <small>Pending</small>
+                  </div>
+                  <div className="order-stat-pill confirmed" onClick={() => setOrderStatusFilter('confirmed')}>
+                    <i className="fas fa-check"></i>
+                    <span>{os.confirmed}</span>
+                    <small>Confirmed</small>
+                  </div>
+                  <div className="order-stat-pill preparing" onClick={() => setOrderStatusFilter('preparing')}>
+                    <i className="fas fa-blender"></i>
+                    <span>{os.preparing}</span>
+                    <small>Preparing</small>
+                  </div>
+                  <div className="order-stat-pill ready" onClick={() => setOrderStatusFilter('ready')}>
+                    <i className="fas fa-box"></i>
+                    <span>{os.ready}</span>
+                    <small>Ready</small>
+                  </div>
+                  <div className="order-stat-pill delivered" onClick={() => setOrderStatusFilter('delivered')}>
+                    <i className="fas fa-truck"></i>
+                    <span>{os.delivered}</span>
+                    <small>Delivered</small>
+                  </div>
+                  <div className="order-stat-pill completed" onClick={() => setOrderStatusFilter('completed')}>
+                    <i className="fas fa-check-circle"></i>
+                    <span>{os.completed}</span>
+                    <small>Completed</small>
+                  </div>
+                  <div className="order-stat-pill cancelled" onClick={() => setOrderStatusFilter('cancelled')}>
+                    <i className="fas fa-times-circle"></i>
+                    <span>{os.cancelled}</span>
+                    <small>Cancelled</small>
+                  </div>
+                  <div className="order-stat-pill revenue">
+                    <i className="fas fa-coins"></i>
+                    <span>{formatCurrency(os.revenue)}</span>
+                    <small>Revenue</small>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Order Filters */}
+            <div className="order-filters">
+              <div className="order-search-box">
+                <i className="fas fa-search"></i>
+                <input
+                  type="text"
+                  placeholder="Search by order #, name, email, phone..."
+                  value={orderSearch}
+                  onChange={(e) => setOrderSearch(e.target.value)}
+                />
+                {orderSearch && (
+                  <button className="search-clear" onClick={() => setOrderSearch('')}>
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value)}
+                className="order-filter-select"
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="preparing">Preparing</option>
+                <option value="ready">Ready</option>
+                <option value="delivered">Delivered</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select
+                value={orderDateFilter}
+                onChange={(e) => setOrderDateFilter(e.target.value)}
+                className="order-filter-select"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last 30 Days</option>
+              </select>
+            </div>
+
+            {/* Order Results Count */}
+            <div className="order-results-info">
+              <span>Showing {getFilteredOrders().length} of {orders.length} orders</span>
+              {(orderSearch || orderStatusFilter !== 'all' || orderDateFilter !== 'all') && (
+                <button className="clear-filters-btn" onClick={() => { setOrderSearch(''); setOrderStatusFilter('all'); setOrderDateFilter('all'); }}>
+                  <i className="fas fa-times"></i> Clear Filters
+                </button>
+              )}
+            </div>
+
+            {getFilteredOrders().length === 0 ? (
               <div className="admin-empty">
                 <i className="fas fa-inbox"></i>
-                <p>No orders yet</p>
+                <p>{orders.length === 0 ? 'No orders yet' : 'No orders match your filters'}</p>
               </div>
             ) : (
               <div className="admin-table-container">
@@ -704,41 +1107,90 @@ const AdminDashboard = ({ token, onLogout }) => {
                       <th>Customer</th>
                       <th>Items</th>
                       <th>Total</th>
+                      <th>Delivery</th>
                       <th>Date</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map(order => (
-                      <tr key={order.orderNumber}>
-                        <td><strong>{order.orderNumber}</strong></td>
+                    {getFilteredOrders().map(order => (
+                      <tr key={order.orderNumber} className={`order-row ${order.status || 'pending'}`}>
                         <td>
-                          <div>{order.customer?.name}</div>
-                          <small>{order.customer?.email}</small>
+                          <strong className="order-number-link" onClick={() => { setSelectedOrder(order); setShowOrderModal(true); }}>
+                            {order.orderNumber}
+                          </strong>
                         </td>
-                        <td>{order.items?.length || 1} items</td>
-                        <td>Rs {(order.payment?.total ?? order.total)?.toLocaleString() || 'N/A'}</td>
-                        <td>{order.delivery?.date || order.date}</td>
+                        <td>
+                          <div className="customer-cell">
+                            <div className="customer-name">{order.customer?.name || order.name || 'N/A'}</div>
+                            <small>{order.customer?.phone || order.phone || ''}</small>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="items-cell">
+                            {order.items?.length || 1} item{(order.items?.length || 1) > 1 ? 's' : ''}
+                            {order.items?.length > 0 && (
+                              <small className="items-preview">{order.items.map(i => i.name).join(', ')}</small>
+                            )}
+                          </div>
+                        </td>
+                        <td><strong>{formatCurrency(getOrderTotal(order))}</strong></td>
+                        <td>
+                          <div className="delivery-cell">
+                            <i className={`fas ${order.delivery?.type === 'pickup' ? 'fa-store' : 'fa-truck'}`}></i>
+                            <span>{order.delivery?.type === 'pickup' ? 'Pickup' : 'Delivery'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="date-cell">
+                            <div>{order.delivery?.date || order.date || 'N/A'}</div>
+                            <small>{order.delivery?.timeSlot || ''}</small>
+                          </div>
+                        </td>
                         <td>
                           <span className={`status-badge ${order.status || 'pending'}`}>
                             {order.status || 'Pending'}
                           </span>
                         </td>
                         <td>
-                          <select
-                            value={order.status || 'pending'}
-                            onChange={(e) => handleUpdateOrderStatus(order.orderNumber, e.target.value)}
-                            className="status-select"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="preparing">Preparing</option>
-                            <option value="ready">Ready</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
+                          <div className="action-btns order-actions">
+                            <button
+                              className="admin-btn-icon edit"
+                              onClick={() => { setSelectedOrder(order); setShowOrderModal(true); }}
+                              title="View Details"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            <button
+                              className="admin-btn-icon offer"
+                              onClick={() => generateInvoice(order)}
+                              title="Download Invoice"
+                            >
+                              <i className="fas fa-file-invoice"></i>
+                            </button>
+                            <select
+                              value={order.status || 'pending'}
+                              onChange={(e) => handleUpdateOrderStatus(order.orderNumber, e.target.value)}
+                              className="status-select-mini"
+                              title="Update Status"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="preparing">Preparing</option>
+                              <option value="ready">Ready</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="completed">Completed</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                            <button
+                              className="admin-btn-icon delete"
+                              onClick={() => handleDeleteOrder(order.orderNumber)}
+                              title="Delete Order"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1173,6 +1625,240 @@ const AdminDashboard = ({ token, onLogout }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {showOrderModal && selectedOrder && (
+        <div className="admin-modal-overlay" onClick={() => setShowOrderModal(false)}>
+          <div className="admin-modal order-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <div>
+                <h2>Order #{selectedOrder.orderNumber}</h2>
+                <span className={`status-badge ${selectedOrder.status || 'pending'}`} style={{ marginTop: '4px', display: 'inline-block' }}>
+                  {selectedOrder.status || 'Pending'}
+                </span>
+              </div>
+              <button className="close-btn" onClick={() => setShowOrderModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="order-detail-content">
+              {/* Order Timestamps */}
+              <div className="order-detail-meta">
+                <div><i className="fas fa-calendar-alt"></i> Placed: {formatDateTime(selectedOrder.createdAt || selectedOrder.timestamp)}</div>
+                {selectedOrder.updatedAt && <div><i className="fas fa-sync-alt"></i> Updated: {formatDateTime(selectedOrder.updatedAt)}</div>}
+              </div>
+
+              {/* Customer Info */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-user"></i> Customer Information</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <label>Name</label>
+                    <span>{selectedOrder.customer?.name || selectedOrder.name || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Email</label>
+                    <span>{selectedOrder.customer?.email || selectedOrder.email || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Phone</label>
+                    <span>{selectedOrder.customer?.phone || selectedOrder.phone || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery Info */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-truck"></i> Delivery Information</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <label>Type</label>
+                    <span>
+                      <i className={`fas ${selectedOrder.delivery?.type === 'pickup' ? 'fa-store' : 'fa-truck'}`} style={{ marginRight: '6px' }}></i>
+                      {selectedOrder.delivery?.type === 'pickup' ? 'Store Pickup' : 'Home Delivery'}
+                    </span>
+                  </div>
+                  {selectedOrder.delivery?.address && (
+                    <div className="detail-item full-width">
+                      <label>Address</label>
+                      <span>{selectedOrder.delivery.address.street}, {selectedOrder.delivery.address.city} {selectedOrder.delivery.address.zipCode}</span>
+                    </div>
+                  )}
+                  <div className="detail-item">
+                    <label>Delivery Date</label>
+                    <span>{selectedOrder.delivery?.date || selectedOrder.date || 'N/A'}</span>
+                  </div>
+                  {selectedOrder.delivery?.timeSlot && (
+                    <div className="detail-item">
+                      <label>Time Slot</label>
+                      <span>{selectedOrder.delivery.timeSlot}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-list"></i> Order Items</h3>
+                <div className="order-items-list">
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                    selectedOrder.items.map((item, idx) => (
+                      <div className="order-item-row" key={idx}>
+                        <div className="order-item-info">
+                          <strong>{item.name}</strong>
+                          <span className="item-qty">× {item.quantity}</span>
+                        </div>
+                        <div className="order-item-price">
+                          <span>{formatCurrency(item.price)} each</span>
+                          <strong>{formatCurrency(item.price * item.quantity)}</strong>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="order-item-row">
+                      <div className="order-item-info">
+                        <strong>{selectedOrder.product || 'Custom Order'}</strong>
+                      </div>
+                      <div className="order-item-price">
+                        <strong>{formatCurrency(getOrderTotal(selectedOrder))}</strong>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Summary */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-credit-card"></i> Payment Summary</h3>
+                <div className="payment-summary">
+                  <div className="payment-row">
+                    <span>Payment Method</span>
+                    <span style={{ textTransform: 'capitalize' }}>{selectedOrder.payment?.method || 'Cash'}</span>
+                  </div>
+                  <div className="payment-row">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(selectedOrder.payment?.subtotal || getOrderTotal(selectedOrder))}</span>
+                  </div>
+                  <div className="payment-row">
+                    <span>Delivery Fee</span>
+                    <span>{formatCurrency(selectedOrder.payment?.deliveryFee || 0)}</span>
+                  </div>
+                  <div className="payment-row total">
+                    <span>Total</span>
+                    <span>{formatCurrency(getOrderTotal(selectedOrder))}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              {(selectedOrder.additional?.specialInstructions || selectedOrder.additional?.isGift || selectedOrder.message) && (
+                <div className="order-detail-section">
+                  <h3><i className="fas fa-sticky-note"></i> Additional Information</h3>
+                  <div className="detail-grid">
+                    {selectedOrder.additional?.specialInstructions && (
+                      <div className="detail-item full-width">
+                        <label>Special Instructions</label>
+                        <span>{selectedOrder.additional.specialInstructions}</span>
+                      </div>
+                    )}
+                    {selectedOrder.additional?.isGift && (
+                      <div className="detail-item full-width">
+                        <label>🎁 Gift Order</label>
+                        <span>{selectedOrder.additional.giftMessage || 'No gift message'}</span>
+                      </div>
+                    )}
+                    {selectedOrder.message && (
+                      <div className="detail-item full-width">
+                        <label>Customer Message</label>
+                        <span>{selectedOrder.message}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Notes */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-clipboard"></i> Admin Notes</h3>
+                {selectedOrder.notes && selectedOrder.notes.length > 0 ? (
+                  <div className="admin-notes-list">
+                    {selectedOrder.notes.map((note, idx) => (
+                      <div className="admin-note" key={idx}>
+                        <small>{formatDateTime(note.date)}</small>
+                        <p>{note.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#999', fontSize: '0.9rem', padding: '0.5rem 0' }}>No notes yet</p>
+                )}
+                <div className="add-note-form">
+                  <input
+                    type="text"
+                    placeholder="Add a note..."
+                    id="orderNoteInput"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target.value.trim()) {
+                        handleAddOrderNote(selectedOrder.orderNumber, e.target.value.trim());
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="admin-btn primary small"
+                    onClick={() => {
+                      const input = document.getElementById('orderNoteInput');
+                      if (input.value.trim()) {
+                        handleAddOrderNote(selectedOrder.orderNumber, input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                  >
+                    <i className="fas fa-plus"></i> Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Update Status */}
+              <div className="order-detail-section">
+                <h3><i className="fas fa-exchange-alt"></i> Update Status</h3>
+                <div className="status-update-row">
+                  <select
+                    value={selectedOrder.status || 'pending'}
+                    onChange={(e) => {
+                      handleUpdateOrderStatus(selectedOrder.orderNumber, e.target.value);
+                      setSelectedOrder({ ...selectedOrder, status: e.target.value });
+                    }}
+                    className="status-select"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready">Ready</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-modal-footer" style={{ padding: '1rem 1.5rem' }}>
+              <button className="admin-btn danger" onClick={() => handleDeleteOrder(selectedOrder.orderNumber)}>
+                <i className="fas fa-trash"></i> Delete Order
+              </button>
+              <button className="admin-btn primary" onClick={() => generateInvoice(selectedOrder)}>
+                <i className="fas fa-file-invoice"></i> Download Invoice
+              </button>
+              <button className="admin-btn secondary" onClick={() => setShowOrderModal(false)}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
