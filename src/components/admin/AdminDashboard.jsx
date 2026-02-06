@@ -11,6 +11,14 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [popupData, setPopupData] = useState(null);
+  const [showPopupModal, setShowPopupModal] = useState(false);
+  const [popupForm, setPopupForm] = useState({
+    type: 'image',
+    content: '',
+    active: true
+  });
+  const [popupPreview, setPopupPreview] = useState(false);
 
   const [productForm, setProductForm] = useState({
     name: '',
@@ -32,22 +40,34 @@ const AdminDashboard = ({ token, onLogout }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [productsRes, ordersRes, statsRes, reviewsRes] = await Promise.all([
+      const [productsRes, ordersRes, statsRes, reviewsRes, popupRes] = await Promise.all([
         fetch('/api/admin?action=products', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=orders', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=stats', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin?action=reviews', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/admin?action=reviews', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin?action=popup', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const productsData = await productsRes.json();
       const ordersData = await ordersRes.json();
       const statsData = await statsRes.json();
       const reviewsData = await reviewsRes.json();
+      const popupDataRes = await popupRes.json();
 
       if (productsData.success) setProducts(productsData.products);
       if (ordersData.success) setOrders(ordersData.orders);
       if (statsData.success) setStats(statsData.stats);
       if (reviewsData.success) setReviews(reviewsData.reviews);
+      if (popupDataRes.success) {
+        setPopupData(popupDataRes.popup);
+        if (popupDataRes.popup) {
+          setPopupForm({
+            type: popupDataRes.popup.type || 'image',
+            content: popupDataRes.popup.content || '',
+            active: popupDataRes.popup.active !== undefined ? popupDataRes.popup.active : true
+          });
+        }
+      }
     } catch (error) {
       showMessage('error', 'Failed to fetch data');
     } finally {
@@ -301,6 +321,79 @@ const AdminDashboard = ({ token, onLogout }) => {
     }
   };
 
+  const handleSavePopup = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/admin?action=popup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(popupForm)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', 'Popup saved successfully!');
+        setShowPopupModal(false);
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to save popup');
+    }
+  };
+
+  const handleTogglePopup = async () => {
+    try {
+      const response = await fetch('/api/admin?action=popup', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', data.message);
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to toggle popup');
+    }
+  };
+
+  const handleDeletePopup = async () => {
+    if (!confirm('Are you sure you want to delete the popup?')) return;
+
+    try {
+      const response = await fetch('/api/admin?action=popup', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showMessage('success', 'Popup deleted!');
+        setPopupData(null);
+        setPopupForm({ type: 'image', content: '', active: true });
+        fetchData();
+      } else {
+        showMessage('error', data.message);
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to delete popup');
+    }
+  };
+
   const resetProductForm = () => {
     setProductForm({
       name: '',
@@ -397,6 +490,16 @@ const AdminDashboard = ({ token, onLogout }) => {
             <i className="fas fa-tags"></i>
             Offers
           </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'popup' ? 'active' : ''}`}
+            onClick={() => setActiveTab('popup')}
+          >
+            <i className="fas fa-window-restore"></i>
+            Popup
+            {popupData?.active && (
+              <span className="badge" style={{ background: '#28a745', color: '#fff' }}>ON</span>
+            )}
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -421,6 +524,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             {activeTab === 'orders' && 'Order Management'}
             {activeTab === 'reviews' && 'Customer Reviews'}
             {activeTab === 'offers' && 'Special Offers'}
+            {activeTab === 'popup' && 'Popup Manager'}
           </h1>
           <div className="admin-user">
             <i className="fas fa-user-circle"></i>
@@ -761,6 +865,71 @@ const AdminDashboard = ({ token, onLogout }) => {
             </div>
           </div>
         )}
+
+        {/* Popup Tab */}
+        {activeTab === 'popup' && (
+          <div className="admin-popup-manager">
+            <div className="admin-toolbar">
+              <button className="admin-btn primary" onClick={() => { setShowPopupModal(true); setPopupPreview(false); }}>
+                <i className={`fas ${popupData ? 'fa-edit' : 'fa-plus'}`}></i>
+                {popupData ? 'Edit Popup' : 'Create Popup'}
+              </button>
+              {popupData && (
+                <>
+                  <button className={`admin-btn ${popupData.active ? 'danger' : 'primary'}`} onClick={handleTogglePopup}>
+                    <i className={`fas ${popupData.active ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    {popupData.active ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button className="admin-btn danger" onClick={handleDeletePopup}>
+                    <i className="fas fa-trash"></i>
+                    Delete Popup
+                  </button>
+                </>
+              )}
+            </div>
+
+            {popupData ? (
+              <div className="popup-preview-section">
+                <div className="popup-info-cards">
+                  <div className="popup-info-card">
+                    <i className="fas fa-info-circle"></i>
+                    <div>
+                      <strong>Type:</strong> {popupData.type === 'image' ? 'Image' : 'HTML Content'}
+                    </div>
+                  </div>
+                  <div className="popup-info-card">
+                    <i className={`fas ${popupData.active ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
+                    <div>
+                      <strong>Status:</strong>
+                      <span className={`status-badge ${popupData.active ? 'completed' : 'cancelled'}`} style={{ marginLeft: '8px' }}>
+                        {popupData.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <h3 style={{ padding: '0 2rem', marginBottom: '1rem' }}>Preview</h3>
+                <div className="popup-live-preview">
+                  <div className="popup-preview-square">
+                    {popupData.type === 'image' ? (
+                      <img src={popupData.content} alt="Popup Preview" />
+                    ) : (
+                      <div dangerouslySetInnerHTML={{ __html: popupData.content }} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="admin-empty">
+                <i className="fas fa-window-restore"></i>
+                <p>No popup configured. Create one to show announcements to visitors.</p>
+                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: '#999' }}>
+                  The popup will appear 2 seconds after visitors open your site.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Product Modal */}
@@ -899,6 +1068,101 @@ const AdminDashboard = ({ token, onLogout }) => {
                 </button>
                 <button type="submit" className="admin-btn primary">
                   {selectedProduct.offer ? 'Update Offer' : 'Add Offer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Modal */}
+      {showPopupModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowPopupModal(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2>{popupData ? 'Edit Popup' : 'Create Popup'}</h2>
+              <button className="close-btn" onClick={() => setShowPopupModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <form onSubmit={handleSavePopup}>
+              <div className="admin-form-group">
+                <label>Content Type</label>
+                <select
+                  value={popupForm.type}
+                  onChange={(e) => setPopupForm({ ...popupForm, type: e.target.value })}
+                >
+                  <option value="image">Image (URL)</option>
+                  <option value="html">HTML Code</option>
+                </select>
+              </div>
+
+              <div className="admin-form-group">
+                <label>{popupForm.type === 'image' ? 'Image URL' : 'HTML Content'}</label>
+                {popupForm.type === 'image' ? (
+                  <input
+                    type="url"
+                    value={popupForm.content}
+                    onChange={(e) => setPopupForm({ ...popupForm, content: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                    required
+                  />
+                ) : (
+                  <textarea
+                    value={popupForm.content}
+                    onChange={(e) => setPopupForm({ ...popupForm, content: e.target.value })}
+                    placeholder='<div style="padding: 2rem; text-align: center;">&#10;  <h2>Special Offer!</h2>&#10;  <p>Get 20% off on all cakes</p>&#10;</div>'
+                    rows="8"
+                    required
+                    style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                  />
+                )}
+              </div>
+
+              <div className="admin-form-row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={popupForm.active}
+                    onChange={(e) => setPopupForm({ ...popupForm, active: e.target.checked })}
+                  />
+                  Active (shown to visitors)
+                </label>
+              </div>
+
+              {popupForm.content && (
+                <div className="admin-form-group" style={{ marginTop: '1rem' }}>
+                  <label>
+                    <button
+                      type="button"
+                      className="admin-btn secondary small"
+                      onClick={() => setPopupPreview(!popupPreview)}
+                    >
+                      <i className={`fas ${popupPreview ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      {popupPreview ? 'Hide Preview' : 'Show Preview'}
+                    </button>
+                  </label>
+                  {popupPreview && (
+                    <div className="popup-modal-preview">
+                      <div className="popup-preview-square">
+                        {popupForm.type === 'image' ? (
+                          <img src={popupForm.content} alt="Preview" />
+                        ) : (
+                          <div dangerouslySetInnerHTML={{ __html: popupForm.content }} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="admin-modal-footer">
+                <button type="button" className="admin-btn secondary" onClick={() => setShowPopupModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="admin-btn primary">
+                  <i className="fas fa-save"></i>
+                  {popupData ? 'Update Popup' : 'Save Popup'}
                 </button>
               </div>
             </form>

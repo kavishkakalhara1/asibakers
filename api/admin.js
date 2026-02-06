@@ -98,6 +98,7 @@ export default async function handler(req, res) {
     const ordersCollection = db.collection('orders');
     const contactsCollection = db.collection('contacts');
     const reviewsCollection = db.collection('reviews');
+    const popupCollection = db.collection('popup');
 
     // Logout
     if (action === 'logout' && req.method === 'POST') {
@@ -321,6 +322,66 @@ export default async function handler(req, res) {
       }
       
       res.status(200).json({ success: true, message: 'Review deleted successfully' });
+      return;
+    }
+
+    // Get popup settings
+    if (action === 'popup' && req.method === 'GET') {
+      const popup = await popupCollection.findOne({});
+      res.status(200).json({ success: true, popup: popup || null });
+      return;
+    }
+
+    // Save/update popup
+    if (action === 'popup' && req.method === 'POST') {
+      const { type, content, active } = req.body;
+
+      if (!type || !content) {
+        res.status(400).json({ success: false, message: 'Type and content are required' });
+        return;
+      }
+
+      // Remove existing popup and insert new one (only one popup at a time)
+      await popupCollection.deleteMany({});
+      const popupData = {
+        type, // 'image' or 'html'
+        content, // image URL or HTML string
+        active: active !== undefined ? active : true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await popupCollection.insertOne(popupData);
+
+      res.status(200).json({ success: true, popup: popupData, message: 'Popup saved successfully' });
+      return;
+    }
+
+    // Toggle popup active status
+    if (action === 'popup' && req.method === 'PUT') {
+      const popup = await popupCollection.findOne({});
+      if (!popup) {
+        res.status(404).json({ success: false, message: 'No popup configured' });
+        return;
+      }
+
+      const updated = await popupCollection.findOneAndUpdate(
+        { _id: popup._id },
+        { $set: { active: !popup.active, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );
+
+      res.status(200).json({
+        success: true,
+        popup: updated,
+        message: `Popup ${updated.active ? 'activated' : 'deactivated'}`
+      });
+      return;
+    }
+
+    // Delete popup
+    if (action === 'popup' && req.method === 'DELETE') {
+      await popupCollection.deleteMany({});
+      res.status(200).json({ success: true, message: 'Popup deleted successfully' });
       return;
     }
 

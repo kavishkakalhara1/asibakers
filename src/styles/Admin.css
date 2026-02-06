@@ -742,6 +742,75 @@
   opacity: 0.7;
 }
 
+/* Popup Manager */
+.admin-popup-manager {
+  padding: 0;
+}
+
+.popup-info-cards {
+  display: flex;
+  gap: 1rem;
+  padding: 0 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.popup-info-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  flex: 1;
+}
+
+.popup-info-card i {
+  font-size: 1.2rem;
+  color: var(--admin-primary);
+}
+
+.popup-live-preview,
+.popup-modal-preview {
+  padding: 0 2rem 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.popup-preview-square {
+  width: 350px;
+  height: 350px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--admin-border);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-preview-square img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popup-preview-square > div {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.popup-modal-preview {
+  padding: 1rem 0 0;
+}
+
+.popup-modal-preview .popup-preview-square {
+  width: 280px;
+  height: 280px;
+}
+
 /* Modal */
 .admin-modal-overlay {
   position: fixed;

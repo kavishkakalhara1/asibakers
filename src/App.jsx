@@ -12,6 +12,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AutoScroll from './components/AutoScroll';
+import PopupModal from './components/PopupModal';
 import Admin from './components/admin/Admin';
 import NotFound from './components/NotFound';
 import './styles/App.css';
@@ -76,6 +77,7 @@ function App() {
         <Footer />
         <ScrollToTop />
         <AutoScroll />
+        <PopupModal />
       </ToastProvider>
     </AppProvider>
   );
