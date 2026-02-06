@@ -20,11 +20,12 @@ export default async function handler(req, res) {
       const { db } = await connectToDatabase();
       const contactsCollection = db.collection('contacts');
       
-      const { name, email, message } = req.body;
+      const { name, email, phone, message } = req.body;
       
       const contact = {
         name,
         email,
+        phone: phone || '',
         message,
         status: 'unread',
         createdAt: new Date()

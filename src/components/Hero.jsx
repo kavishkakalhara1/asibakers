@@ -1,6 +1,7 @@
 const Hero = () => {
   const scrollToSection = (sectionId) => {
     const section = document.querySelector(sectionId);
+    if (!section) return;
     const navbarHeight = 80;
     const targetPosition = section.offsetTop - navbarHeight;
     

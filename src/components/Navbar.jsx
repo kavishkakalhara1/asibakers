@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import CartModal from './CartModal';
 
@@ -9,18 +9,31 @@ const Navbar = () => {
   const [showCart, setShowCart] = useState(false);
   const { cartCount } = useApp();
 
+  // Close mobile menu when clicking outside
+  const handleClickOutside = useCallback((e) => {
+    if (isMenuOpen && !e.target.closest('.nav-links') && !e.target.closest('.mobile-menu-btn')) {
+      setIsMenuOpen(false);
+    }
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [handleClickOutside]);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 100);
 
       const sections = document.querySelectorAll('section');
+      let currentActive = 'home';
       sections.forEach(section => {
         const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
         if (window.scrollY >= sectionTop - 150) {
-          setActiveSection(section.getAttribute('id'));
+          currentActive = section.getAttribute('id');
         }
       });
+      setActiveSection(currentActive);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -30,6 +43,7 @@ const Navbar = () => {
   const scrollToSection = (e, sectionId) => {
     e.preventDefault();
     const section = document.querySelector(sectionId);
+    if (!section) return;
     const navbarHeight = 80;
     const targetPosition = section.offsetTop - navbarHeight;
     

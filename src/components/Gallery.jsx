@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const Gallery = () => {
   const [lightboxImage, setLightboxImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const dragMovedRef = useRef(false);
   const sliderRef = useRef(null);
 
   const galleryImages = [
@@ -18,12 +19,14 @@ const Gallery = () => {
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
+    dragMovedRef.current = false;
     setStartX(e.pageX - sliderRef.current.offsetLeft);
     setScrollLeft(sliderRef.current.scrollLeft);
   };
 
   const handleTouchStart = (e) => {
     setIsDragging(true);
+    dragMovedRef.current = false;
     setStartX(e.touches[0].pageX - sliderRef.current.offsetLeft);
     setScrollLeft(sliderRef.current.scrollLeft);
   };
@@ -33,6 +36,7 @@ const Gallery = () => {
     e.preventDefault();
     const x = e.pageX - sliderRef.current.offsetLeft;
     const walk = (x - startX) * 2;
+    if (Math.abs(walk) > 5) dragMovedRef.current = true;
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -40,12 +44,19 @@ const Gallery = () => {
     if (!isDragging) return;
     const x = e.touches[0].pageX - sliderRef.current.offsetLeft;
     const walk = (x - startX) * 2;
+    if (Math.abs(walk) > 5) dragMovedRef.current = true;
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
+
+  const handleImageClick = useCallback((image) => {
+    if (!dragMovedRef.current) {
+      setLightboxImage(image);
+    }
+  }, []);
 
   return (
     <>
@@ -70,7 +81,7 @@ const Gallery = () => {
             onTouchEnd={handleDragEnd}
           >
             {galleryImages.map((image, index) => (
-              <div key={index} className="gallery-item" onClick={() => setLightboxImage(image)}>
+              <div key={index} className="gallery-item" onClick={() => handleImageClick(image)}>
                 <img src={image} alt={`Cake ${index + 1}`} />
                 <div className="gallery-overlay">
                   <i className="fas fa-search-plus"></i>

@@ -49,12 +49,12 @@ function App() {
     };
   }, []);
 
-  // Admin route
+  // Admin route - no loading screen needed
   if (currentRoute === 'admin') {
     return <Admin />;
   }
 
-  // 404 route
+  // 404 route - no loading screen needed
   if (currentRoute === '404') {
     return <NotFound />;
   }

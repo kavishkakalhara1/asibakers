@@ -35,8 +35,11 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
     isGift: false
   });
 
-  const today = new Date();
-  const minDate = new Date(today.setDate(today.getDate() + 1)).toISOString().split('T')[0];
+  const minDate = (() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  })();
 
   const timeSlots = [
     '9:00 AM - 11:00 AM',
@@ -50,9 +53,10 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
   const totalAmount = cartTotal + deliveryFee;
 
   useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = prevOverflow;
     };
   }, []);
 
@@ -66,8 +70,22 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
 
   const validateStep = (stepNum) => {
     switch (stepNum) {
-      case 1:
-        return formData.name && formData.email && formData.phone;
+      case 1: {
+        if (!formData.name || !formData.email || !formData.phone) return false;
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          addToast('Please enter a valid email address', 'error');
+          return false;
+        }
+        // Basic phone validation
+        const phoneDigits = formData.phone.replace(/\D/g, '');
+        if (phoneDigits.length < 7) {
+          addToast('Please enter a valid phone number', 'error');
+          return false;
+        }
+        return true;
+      }
       case 2:
         if (formData.deliveryType === 'pickup') return true;
         return formData.address && formData.city && formData.zipCode;

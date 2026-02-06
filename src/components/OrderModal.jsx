@@ -16,9 +16,10 @@ const OrderModal = ({ productName, onClose }) => {
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = prevOverflow;
     };
   }, []);
 
@@ -49,6 +50,8 @@ const OrderModal = ({ productName, onClose }) => {
         setTimeout(() => {
           onClose();
         }, 2000);
+      } else {
+        addToast(data.message || 'Failed to place order. Please try again.', 'error');
       }
     } catch (error) {
       addToast('Failed to place order. Please try again.', 'error');

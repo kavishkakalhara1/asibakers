@@ -30,10 +30,14 @@ const Products = () => {
 
   const filterProducts = (category) => {
     setActiveFilter(category);
+  };
+
+  // Centralized filtering logic that reacts to all filter state changes
+  useEffect(() => {
     let filtered = products;
     
-    if (category !== 'all') {
-      filtered = products.filter(p => p.category === category);
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(p => p.category === activeFilter);
     }
     
     if (searchQuery) {
@@ -44,11 +48,7 @@ const Products = () => {
     }
     
     setFilteredProducts(filtered);
-  };
-
-  useEffect(() => {
-    filterProducts(activeFilter);
-  }, [searchQuery, products]);
+  }, [searchQuery, products, activeFilter]);
 
   const handleAddToCart = (product, e) => {
     e.stopPropagation();
@@ -58,8 +58,8 @@ const Products = () => {
 
   const handleToggleFavorite = (productId, e) => {
     e.stopPropagation();
-    toggleFavorite(productId);
     const isFavorite = favorites.includes(productId);
+    toggleFavorite(productId);
     addToast(isFavorite ? 'Removed from favorites' : 'Added to favorites! ❤️', 'info');
   };
 
@@ -117,14 +117,41 @@ const Products = () => {
             >
               <i className="fas fa-candy-cane"></i> Chocolate
             </button>
+            <button 
+              className={`filter-btn ${activeFilter === 'Cupcakes' ? 'active' : ''}`} 
+              onClick={() => filterProducts('Cupcakes')}
+            >
+              <i className="fas fa-cookie"></i> Cupcakes
+            </button>
           </div>
 
           {/* Products Grid */}
           <div className="products-grid">
-            {filteredProducts.map(product => (
+            {filteredProducts.length === 0 ? (
+              <div className="no-results" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+                <i className="fas fa-search" style={{ fontSize: '3rem', color: '#ccc', marginBottom: '1rem', display: 'block' }}></i>
+                <p style={{ fontSize: '1.2rem', color: '#999' }}>No cakes found matching your search.</p>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ marginTop: '1rem' }}
+                  onClick={() => { setSearchQuery(''); filterProducts('all'); }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              filteredProducts.map(product => (
               <div key={product.id} className="product-card" data-category={product.category}>
                 <div className="product-image">
-                  <img src={product.image} alt={product.name} loading="lazy" />
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    loading="lazy"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500';
+                    }}
+                  />
                   {product.popular && (
                     <div className="product-badge">
                       <i className="fas fa-star"></i> Popular
@@ -142,7 +169,7 @@ const Products = () => {
                   <h3>{product.name}</h3>
                   <p>{product.description}</p>
                   <div className="product-footer">
-                    <span className="product-price">Rs {product.price}</span>
+                    <span className="product-price">Rs {product.price.toLocaleString()}</span>
                     <div className="product-actions">
                       <button className="add-to-cart-btn" onClick={(e) => handleAddToCart(product, e)}>
                         <i className="fas fa-cart-plus"></i>
@@ -154,7 +181,8 @@ const Products = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
       </section>

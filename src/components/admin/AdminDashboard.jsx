@@ -53,6 +53,7 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const showMessage = (type, text) => {
@@ -534,7 +535,7 @@ const AdminDashboard = ({ token, onLogout }) => {
                           <small>{order.customer?.email}</small>
                         </td>
                         <td>{order.items?.length || 1} items</td>
-                        <td>Rs {order.total?.toLocaleString() || 'N/A'}</td>
+                        <td>Rs {(order.payment?.total ?? order.total)?.toLocaleString() || 'N/A'}</td>
                         <td>{order.delivery?.date || order.date}</td>
                         <td>
                           <span className={`status-badge ${order.status || 'pending'}`}>

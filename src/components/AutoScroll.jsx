@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const AutoScroll = () => {
   const [currentSection, setCurrentSection] = useState(0);
 
-  const sections = ['home', 'about', 'products', 'gallery', 'testimonials', 'contact'];
+  const sections = useMemo(() => ['home', 'about', 'products', 'gallery', 'testimonials', 'contact'], []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,7 +26,7 @@ const AutoScroll = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [sections]);
 
   const scrollToSectionByIndex = (index) => {
     const section = document.getElementById(sections[index]);
