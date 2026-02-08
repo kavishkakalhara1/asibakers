@@ -60,14 +60,14 @@ const Contact = () => {
                 <i className="fas fa-map-marker-alt"></i>
                 <div>
                   <h4>Location</h4>
-                  <p>123 Sweet Street, Bakery District</p>
+                  <p>Highway Rd, Godagama, Matara</p>
                 </div>
               </div>
               <div className="info-item">
                 <i className="fas fa-phone"></i>
                 <div>
                   <h4>Phone</h4>
-                  <p>+1 (555) 123-4567</p>
+                  <p>0701429232</p>
                 </div>
               </div>
               <div className="info-item">
@@ -77,13 +77,7 @@ const Contact = () => {
                   <p>order@asibakers.shop</p>
                 </div>
               </div>
-              <div className="info-item">
-                <i className="fas fa-clock"></i>
-                <div>
-                  <h4>Hours</h4>
-                  <p>Mon - Sat: 9AM - 8PM<br />Sunday: 10AM - 6PM</p>
-                </div>
-              </div>
+              
             </div>
 
             <div className="social-links">
