@@ -48,7 +48,17 @@ const OrderModal = ({ product, onClose }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          customer: {
+            name: formData.name,
+            email: formData.email || '',
+            phone: formData.phone
+          },
+          delivery: {
+            type: 'pickup',
+            address: null,
+            date: formData.date,
+            timeSlot: ''
+          },
           items: [{
             id: typeof product === 'object' ? product.id : null,
             name: productName,
@@ -60,6 +70,11 @@ const OrderModal = ({ product, onClose }) => {
             subtotal: effectivePrice * formData.quantity,
             deliveryFee: 0,
             total: effectivePrice * formData.quantity
+          },
+          additional: {
+            specialInstructions: formData.message || '',
+            isGift: false,
+            giftMessage: ''
           }
         })
       });
