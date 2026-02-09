@@ -10,11 +10,16 @@ const Products = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [ordersEnabled, setOrdersEnabled] = useState(true);
   const { favorites, toggleFavorite, addToCart } = useApp();
   const { addToast } = useToast();
 
   useEffect(() => {
     fetchProducts();
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => setOrdersEnabled(data.ordersEnabled !== false))
+      .catch(() => {});
   }, []);
 
   const fetchProducts = async () => {
@@ -52,6 +57,10 @@ const Products = () => {
 
   const handleAddToCart = (product, e) => {
     e.stopPropagation();
+    if (!ordersEnabled) {
+      addToast('We are not accepting orders at the moment. Please try again later.', 'error');
+      return;
+    }
     addToCart(product);
     addToast(`${product.name} added to cart! 🎂`, 'success');
   };
@@ -64,6 +73,10 @@ const Products = () => {
   };
 
   const openOrderModal = (product) => {
+    if (!ordersEnabled) {
+      addToast('We are not accepting orders at the moment. Please try again later.', 'error');
+      return;
+    }
     setSelectedProduct(product);
     setShowModal(true);
   };

@@ -10,6 +10,7 @@ const OrderModal = ({ product, onClose }) => {
     ? Math.round(productPrice * (1 - productOffer.discount / 100))
     : productPrice;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -40,6 +41,7 @@ const OrderModal = ({ product, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const response = await fetch('/api/order', {
@@ -83,15 +85,16 @@ const OrderModal = ({ product, onClose }) => {
       
       if (data.success) {
         addToast(data.message, 'success');
-        setFormData({ name: '', email: '', phone: '', product: productName, quantity: 1, date: '', message: '' });
         setTimeout(() => {
           onClose();
-        }, 2000);
+        }, 1500);
       } else {
         addToast(data.message || 'Failed to place order. Please try again.', 'error');
+        setIsSubmitting(false);
       }
     } catch (error) {
       addToast('Failed to place order. Please try again.', 'error');
+      setIsSubmitting(false);
     }
   };
 
@@ -201,8 +204,12 @@ const OrderModal = ({ product, onClose }) => {
             <label htmlFor="orderMessage">Special Instructions</label>
             <i className="fas fa-comment"></i>
           </div>
-          <button type="submit" className="btn btn-primary">
-            <i className="fas fa-check"></i> Place Order
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <><i className="fas fa-spinner fa-spin"></i> Placing Order...</>
+            ) : (
+              <><i className="fas fa-check"></i> Place Order</>
+            )}
           </button>
         </form>
       </div>

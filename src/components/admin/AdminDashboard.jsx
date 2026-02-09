@@ -21,6 +21,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   });
   const [popupPreview, setPopupPreview] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ordersEnabled, setOrdersEnabled] = useState(true);
 
   // Order management state
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -49,12 +50,13 @@ const AdminDashboard = ({ token, onLogout }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [productsRes, ordersRes, statsRes, reviewsRes, popupRes] = await Promise.all([
+      const [productsRes, ordersRes, statsRes, reviewsRes, popupRes, settingsRes] = await Promise.all([
         fetch('/api/admin?action=products', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=orders', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=stats', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin?action=reviews', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin?action=popup', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/admin?action=popup', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin?action=settings', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const productsData = await productsRes.json();
@@ -62,6 +64,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       const statsData = await statsRes.json();
       const reviewsData = await reviewsRes.json();
       const popupDataRes = await popupRes.json();
+      const settingsData = await settingsRes.json();
 
       if (productsData.success) setProducts(productsData.products);
       if (ordersData.success) setOrders(ordersData.orders);
@@ -76,6 +79,9 @@ const AdminDashboard = ({ token, onLogout }) => {
             active: popupDataRes.popup.active !== undefined ? popupDataRes.popup.active : true
           });
         }
+      }
+      if (settingsData.success) {
+        setOrdersEnabled(settingsData.settings?.ordersEnabled !== undefined ? settingsData.settings.ordersEnabled : true);
       }
     } catch (error) {
       showMessage('error', 'Failed to fetch data');
@@ -1010,6 +1016,39 @@ const AdminDashboard = ({ token, onLogout }) => {
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="admin-orders">
+            {/* Orders Accepting Toggle */}
+            <div className="orders-toggle-bar">
+              <div className="orders-toggle-info">
+                <i className={`fas ${ordersEnabled ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ color: ordersEnabled ? 'var(--admin-success)' : 'var(--admin-danger)', fontSize: '1.2rem' }}></i>
+                <div>
+                  <strong>{ordersEnabled ? 'Accepting Orders' : 'Orders Paused'}</strong>
+                  <small>{ordersEnabled ? 'Customers can place new orders' : 'New orders are currently disabled'}</small>
+                </div>
+              </div>
+              <button
+                className={`orders-toggle-btn ${ordersEnabled ? 'enabled' : 'disabled'}`}
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/admin?action=toggle-orders', {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      setOrdersEnabled(data.ordersEnabled);
+                      showMessage('success', data.message);
+                    }
+                  } catch (error) {
+                    showMessage('error', 'Failed to toggle orders');
+                  }
+                }}
+              >
+                <span className="toggle-track">
+                  <span className="toggle-thumb"></span>
+                </span>
+                <span>{ordersEnabled ? 'Enabled' : 'Disabled'}</span>
+              </button>
+            </div>
             {/* Order Stats Bar */}
             {(() => {
               const os = getOrderStats();

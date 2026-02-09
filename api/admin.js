@@ -99,6 +99,7 @@ export default async function handler(req, res) {
     const contactsCollection = db.collection('contacts');
     const reviewsCollection = db.collection('reviews');
     const popupCollection = db.collection('popup');
+    const settingsCollection = db.collection('settings');
 
     // Logout
     if (action === 'logout' && req.method === 'POST') {
@@ -766,6 +767,36 @@ export default async function handler(req, res) {
           hiddenReviews,
           avgRating
         }
+      });
+      return;
+    }
+
+    // Get settings
+    if (action === 'settings' && req.method === 'GET') {
+      const settings = await settingsCollection.findOne({ key: 'general' });
+      res.status(200).json({ 
+        success: true, 
+        settings: settings || { ordersEnabled: true }
+      });
+      return;
+    }
+
+    // Toggle orders accepting
+    if (action === 'toggle-orders' && req.method === 'POST') {
+      const settings = await settingsCollection.findOne({ key: 'general' });
+      const currentState = settings?.ordersEnabled !== undefined ? settings.ordersEnabled : true;
+      const newState = !currentState;
+      
+      await settingsCollection.updateOne(
+        { key: 'general' },
+        { $set: { ordersEnabled: newState, updatedAt: new Date() } },
+        { upsert: true }
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        ordersEnabled: newState,
+        message: newState ? 'Orders are now enabled' : 'Orders are now disabled'
       });
       return;
     }

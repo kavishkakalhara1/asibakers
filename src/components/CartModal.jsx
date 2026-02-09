@@ -8,10 +8,15 @@ const CartModal = ({ onClose }) => {
   const { cart, updateCartQuantity, removeFromCart, cartTotal, clearCart } = useApp();
   const { addToast } = useToast();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [ordersEnabled, setOrdersEnabled] = useState(true);
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => setOrdersEnabled(data.ordersEnabled !== false))
+      .catch(() => {});
     return () => {
       document.body.style.overflow = prevOverflow;
     };
@@ -20,6 +25,10 @@ const CartModal = ({ onClose }) => {
   const handleCheckout = () => {
     if (cart.length === 0) {
       addToast('Your cart is empty!', 'error');
+      return;
+    }
+    if (!ordersEnabled) {
+      addToast('We are not accepting orders at the moment. Please try again later.', 'error');
       return;
     }
     setShowCheckout(true);

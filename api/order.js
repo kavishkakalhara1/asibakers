@@ -18,6 +18,18 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { db } = await connectToDatabase();
+      
+      // Check if orders are enabled
+      const settingsCollection = db.collection('settings');
+      const settings = await settingsCollection.findOne({ key: 'general' });
+      if (settings && settings.ordersEnabled === false) {
+        res.status(403).json({ 
+          success: false, 
+          message: 'We are not accepting orders at the moment. Please try again later.'
+        });
+        return;
+      }
+      
       const ordersCollection = db.collection('orders');
       
       const orderData = req.body;
