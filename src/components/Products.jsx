@@ -63,8 +63,8 @@ const Products = () => {
     addToast(isFavorite ? 'Removed from favorites' : 'Added to favorites! ❤️', 'info');
   };
 
-  const openOrderModal = (productName) => {
-    setSelectedProduct(productName);
+  const openOrderModal = (product) => {
+    setSelectedProduct(product);
     setShowModal(true);
   };
 
@@ -186,7 +186,7 @@ const Products = () => {
                       <button className="add-to-cart-btn" onClick={(e) => handleAddToCart(product, e)}>
                         <i className="fas fa-cart-plus"></i>
                       </button>
-                      <button className="order-btn" onClick={() => openOrderModal(product.name)}>
+                      <button className="order-btn" onClick={() => openOrderModal(product)}>
                         <i className="fas fa-shopping-cart"></i> Order
                       </button>
                     </div>
@@ -201,7 +201,7 @@ const Products = () => {
       
       {showModal && (
         <OrderModal 
-          productName={selectedProduct} 
+          product={selectedProduct} 
           onClose={() => setShowModal(false)} 
         />
       )}

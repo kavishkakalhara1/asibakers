@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '../contexts/ToastContext';
 
-const OrderModal = ({ productName, onClose }) => {
+const OrderModal = ({ product, onClose }) => {
+  const productName = typeof product === 'object' ? product.name : product;
+  const productPrice = typeof product === 'object' ? product.price : 0;
+  const productOffer = typeof product === 'object' ? product.offer : null;
+  const effectivePrice = productOffer && productOffer.discount > 0
+    ? Math.round(productPrice * (1 - productOffer.discount / 100))
+    : productPrice;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -40,7 +47,21 @@ const OrderModal = ({ productName, onClose }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          items: [{
+            id: typeof product === 'object' ? product.id : null,
+            name: productName,
+            price: effectivePrice,
+            quantity: formData.quantity
+          }],
+          payment: {
+            method: 'cash',
+            subtotal: effectivePrice * formData.quantity,
+            deliveryFee: 0,
+            total: effectivePrice * formData.quantity
+          }
+        })
       });
       
       const data = await response.json();
@@ -86,12 +107,11 @@ const OrderModal = ({ productName, onClose }) => {
               type="email" 
               id="orderEmail" 
               name="email" 
-              required 
               value={formData.email}
               onChange={handleChange}
               placeholder=" "
             />
-            <label htmlFor="orderEmail">Email Address</label>
+            <label htmlFor="orderEmail">Email Address (optional)</label>
             <i className="fas fa-envelope"></i>
           </div>
           <div className="form-group">
@@ -120,26 +140,24 @@ const OrderModal = ({ productName, onClose }) => {
             <label htmlFor="orderProduct">Product</label>
             <i className="fas fa-birthday-cake"></i>
           </div>
-          <div className="form-group">
-            <div className="quantity-selector">
-              <label className="quantity-label">Quantity</label>
-              <div className="quantity-controls">
-                <button
-                  type="button"
-                  className="qty-btn"
-                  onClick={() => setFormData(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))}
-                >
-                  <i className="fas fa-minus"></i>
-                </button>
-                <span className="qty-value">{formData.quantity}</span>
-                <button
-                  type="button"
-                  className="qty-btn"
-                  onClick={() => setFormData(prev => ({ ...prev, quantity: prev.quantity + 1 }))}
-                >
-                  <i className="fas fa-plus"></i>
-                </button>
-              </div>
+          <div className="quantity-selector">
+            <label className="quantity-label">Quantity</label>
+            <div className="quantity-controls">
+              <button
+                type="button"
+                className="qty-btn"
+                onClick={() => setFormData(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))}
+              >
+                <i className="fas fa-minus"></i>
+              </button>
+              <span className="qty-value">{formData.quantity}</span>
+              <button
+                type="button"
+                className="qty-btn"
+                onClick={() => setFormData(prev => ({ ...prev, quantity: prev.quantity + 1 }))}
+              >
+                <i className="fas fa-plus"></i>
+              </button>
             </div>
           </div>
           <div className="form-group">

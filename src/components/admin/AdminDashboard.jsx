@@ -20,6 +20,7 @@ const AdminDashboard = ({ token, onLogout }) => {
     active: true
   });
   const [popupPreview, setPopupPreview] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Order management state
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -746,31 +747,39 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   return (
     <div className="admin-dashboard">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="admin-logo">
           <i className="fas fa-birthday-cake"></i>
           <span>AsiBakers</span>
+          <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
+            <i className="fas fa-times"></i>
+          </button>
         </div>
 
         <nav className="admin-nav">
           <button
             className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }}
           >
             <i className="fas fa-chart-pie"></i>
             Dashboard
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('products')}
+            onClick={() => { setActiveTab('products'); setSidebarOpen(false); }}
           >
             <i className="fas fa-birthday-cake"></i>
             Products
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
+            onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }}
           >
             <i className="fas fa-shopping-bag"></i>
             Orders
@@ -780,7 +789,7 @@ const AdminDashboard = ({ token, onLogout }) => {
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reviews')}
+            onClick={() => { setActiveTab('reviews'); setSidebarOpen(false); }}
           >
             <i className="fas fa-star"></i>
             Reviews
@@ -790,21 +799,21 @@ const AdminDashboard = ({ token, onLogout }) => {
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'offers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('offers')}
+            onClick={() => { setActiveTab('offers'); setSidebarOpen(false); }}
           >
             <i className="fas fa-tags"></i>
             Offers
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('transactions')}
+            onClick={() => { setActiveTab('transactions'); setSidebarOpen(false); }}
           >
             <i className="fas fa-money-bill-wave"></i>
             Transactions
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'popup' ? 'active' : ''}`}
-            onClick={() => setActiveTab('popup')}
+            onClick={() => { setActiveTab('popup'); setSidebarOpen(false); }}
           >
             <i className="fas fa-window-restore"></i>
             Popup
@@ -830,7 +839,11 @@ const AdminDashboard = ({ token, onLogout }) => {
       <main className="admin-main">
         {/* Header */}
         <header className="admin-header">
-          <h1>
+          <div className="admin-header-left">
+            <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(true)}>
+              <i className="fas fa-bars"></i>
+            </button>
+            <h1>
             {activeTab === 'dashboard' && 'Dashboard Overview'}
             {activeTab === 'products' && 'Manage Products'}
             {activeTab === 'orders' && 'Order Management'}
@@ -839,6 +852,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             {activeTab === 'transactions' && 'Financial Dashboard'}
             {activeTab === 'popup' && 'Popup Manager'}
           </h1>
+          </div>
           <div className="admin-user">
             <i className="fas fa-user-circle"></i>
             <span>Admin</span>

@@ -93,7 +93,8 @@ export const AppProvider = ({ children }) => {
         updateCartQuantity,
         clearCart,
         cartTotal,
-        cartCount
+        cartCount,
+        getEffectivePrice
       }}
     >
       {children}

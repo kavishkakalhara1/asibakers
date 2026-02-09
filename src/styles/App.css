@@ -943,7 +943,7 @@ section {
 .product-badge {
     position: absolute;
     top: 15px;
-    right: 15px;
+    right: 60px;
     background: var(--gold);
     color: var(--white);
     padding: 8px 15px;
@@ -954,6 +954,7 @@ section {
     align-items: center;
     gap: 5px;
     box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+    z-index: 2;
 }
 
 .product-info {
@@ -2301,7 +2302,7 @@ section {
 .favorite-btn {
     position: absolute;
     top: 15px;
-    left: 15px;
+    right: 15px;
     background: var(--white);
     border: none;
     width: 40px;

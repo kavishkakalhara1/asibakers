@@ -4,7 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 
 const CheckoutModal = ({ onClose, onSuccess }) => {
-  const { cart, cartTotal, clearCart } = useApp();
+  const { cart, cartTotal, clearCart, getEffectivePrice } = useApp();
   const { addToast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,7 +133,7 @@ const CheckoutModal = ({ onClose, onSuccess }) => {
       items: cart.map(item => ({
         id: item.id,
         name: item.name,
-        price: item.price,
+        price: getEffectivePrice(item),
         quantity: item.quantity
       })),
       payment: {
